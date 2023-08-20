@@ -1,0 +1,41 @@
+{
+    "name": "@wasm-fmt/clang-format",
+    "author": "magic-akari <akari.ccino@gamil.com>",
+    "version": "0.0.0",
+    "description": "A wasm based clang-format",
+    "main": "clang-format.js",
+    "types": "clang-format.d.ts",
+    "type": "module",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/wasm-fmt/clang-format.git"
+    },
+    "exports": {
+        ".": {
+            "types": "./clang-format.d.ts",
+            "default": "./clang-format.js"
+        },
+        "./vite": {
+            "types": "./clang-format.d.ts",
+            "default": "./vite.js"
+        },
+        "./package.json": "./package.json",
+        "./*": "./*"
+    },
+    "engines": {
+        "node": ">=16.17.0"
+    },
+    "keywords": [
+        "wasm",
+        "clang-format",
+        "formatter"
+    ],
+    "license": "MIT",
+    "publishConfig": {
+        "access": "public"
+    },
+    "bugs": {
+        "url": "https://github.com/wasm-fmt/clang-format/issues"
+    },
+    "homepage": "https://github.com/wasm-fmt/clang-format#readme"
+}
