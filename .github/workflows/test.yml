@@ -1,0 +1,41 @@
+name: Test
+
+on: [push, pull_request]
+
+jobs:
+    test:
+        name: test
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v3
+              with:
+                  submodules: "recursive"
+            - name: Install llvm and clang
+              run: sudo apt-get install llvm clang
+            - name: Install CMake
+              run: sudo apt-get install cmake
+            - name: Install Ninja
+              run: sudo apt-get install ninja-build
+            - name: Install Emscripten
+              uses: mymindstorm/setup-emsdk@v11
+              with:
+                  version: 3.1.44
+
+            - name: Install Node
+              uses: actions/setup-node@v3
+              with:
+                  node-version-file: ".node-version"
+
+            - name: Build
+              run: ./scripts/build.sh
+
+            - name: Pack
+              run: |
+                  cd npm
+                  npm pack
+
+            - name: Upload
+              uses: actions/upload-artifact@v3
+              with:
+                  name: npm
+                  path: npm/*.tgz
