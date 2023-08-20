@@ -37,3 +37,5 @@ export declare function format(
     filename?: Filename,
     style?: Style
 ): void;
+
+export declare function version(): string;

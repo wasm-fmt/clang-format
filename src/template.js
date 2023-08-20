@@ -6,6 +6,7 @@ export default async function init(wasm_url) {
     const Module = {
         onRuntimeInitialized() {
             format_with_style = this.format_with_style;
+            version = this.version;
             resolve();
         },
         noInitialRun: true,
@@ -36,6 +37,10 @@ export default async function init(wasm_url) {
 }
 
 function format_with_style() {
+    throw Error("uninit");
+}
+
+export function version() {
     throw Error("uninit");
 }
 
