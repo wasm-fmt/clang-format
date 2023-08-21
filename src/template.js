@@ -19,19 +19,17 @@ export default async function init(wasm_url) {
         typeof process.versions.node == "string";
 
     var _require = typeof require !== "undefined" ? require : undefined;
-    var __dirname = typeof __dirname !== "undefined" ? __dirname : undefined;
+    var _dirname = typeof __dirname !== "undefined" ? __dirname : undefined;
 
     if (ENVIRONMENT_IS_NODE) {
         _require ||= await import("module").then((m) =>
             m.createRequire(import.meta.url)
         );
 
-        __dirname ||= await import("url").then((m) =>
-            m.fileURLToPath(new URL(".", import.meta.url))
-        );
+        _dirname ||= new URL(".", import.meta["url"]).pathname;
     }
 
-    load(Module, _require, __dirname);
+    load(Module, _require, _dirname);
 
     return result;
 }
