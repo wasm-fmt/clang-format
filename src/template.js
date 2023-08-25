@@ -44,8 +44,8 @@ export function version() {
 
 export function format(content, filename = "<stdin>", style = "LLVM") {
     const result = format_with_style(content, filename, style);
-    if (result === "\0") {
-        throw Error("format failed");
+    if (result[0] === "\0") {
+        throw Error(result.slice(1));
     }
     return result;
 }

@@ -13,6 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 #include <emscripten/bind.h>
+#include <sstream>
 #include "clang/Basic/Diagnostic.h"
 #include "clang/Basic/DiagnosticOptions.h"
 #include "clang/Basic/FileManager.h"
@@ -95,8 +96,9 @@ static auto format(const std::string str, const std::string assumedFileName, con
     ErrorOr<std::unique_ptr<MemoryBuffer>> CodeOrErr = MemoryBuffer::getMemBuffer(str);
 
     if (std::error_code EC = CodeOrErr.getError()) {
-        llvm::errs() << EC.message() << "\n";
-        return "\0";
+        std::string err = EC.message();
+        llvm::errs() << err << "\n";
+        return "\0" + err;
     }
     std::unique_ptr<llvm::MemoryBuffer> Code = std::move(CodeOrErr.get());
     if (Code->getBufferSize() == 0)
@@ -107,8 +109,11 @@ static auto format(const std::string str, const std::string assumedFileName, con
     const char* InvalidBOM = SrcMgr::ContentCache::getInvalidBOM(BufStr);
 
     if (InvalidBOM) {
-        llvm::errs() << "error: encoding with unsupported byte order mark \"" << InvalidBOM << "\" detected.\n";
-        return "\0";
+        std::stringstream err;
+        err << "error: encoding with unsupported byte order mark \"" << InvalidBOM << "\" detected.";
+
+        llvm::errs() << err.str() << "\n";
+        return "\0" + err.str();
     }
 
     std::vector<tooling::Range> Ranges;
@@ -116,15 +121,17 @@ static auto format(const std::string str, const std::string assumedFileName, con
 
     StringRef AssumedFileName = assumedFileName;
     if (AssumedFileName.empty()) {
-        llvm::errs() << "error: empty filenames are not allowed\n";
-        return "\0";
+        std::string err = "error: no file name given";
+        llvm::errs() << err << "\n";
+        return "\0" + err;
     }
 
     llvm::Expected<FormatStyle> FormatStyle =
         getStyle(style, AssumedFileName, FallbackStyle, Code->getBuffer(), nullptr, false);
     if (!FormatStyle) {
-        llvm::errs() << llvm::toString(FormatStyle.takeError()) << "\n";
-        return "\0";
+        std::string err = llvm::toString(FormatStyle.takeError());
+        llvm::errs() << err << "\n";
+        return "\0" + err;
     }
 
     StringRef QualifierAlignmentOrder = QualifierAlignment;
@@ -165,8 +172,9 @@ static auto format(const std::string str, const std::string assumedFileName, con
 
     auto ChangedCode = tooling::applyAllReplacements(Code->getBuffer(), Replaces);
     if (!ChangedCode) {
-        llvm::errs() << llvm::toString(ChangedCode.takeError()) << "\n";
-        return "\0";
+        std::string err = llvm::toString(ChangedCode.takeError());
+        llvm::errs() << err << "\n";
+        return "\0" + err;
     }
     // Get new affected ranges after sorting `#includes`.
     Ranges = tooling::calculateRangesAfterReplacements(Replaces, Ranges);
