@@ -1,7 +1,7 @@
 {
     "name": "@wasm-fmt/clang-format",
     "author": "magic-akari <akari.ccino@gamil.com>",
-    "version": "0.0.2",
+    "version": "0.1.0",
     "description": "A wasm based clang-format",
     "main": "clang-format.js",
     "types": "clang-format.d.ts",
