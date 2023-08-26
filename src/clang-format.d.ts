@@ -1,21 +1,8 @@
-export type InitInput =
-    | RequestInfo
-    | URL
-    | Response
-    | BufferSource
-    | WebAssembly.Module;
+export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
 export default function init(wasm_url?: InitInput): Promise<void>;
 
-export type Style =
-    | "LLVM"
-    | "Google"
-    | "Chromium"
-    | "Mozilla"
-    | "WebKit"
-    | "Microsoft"
-    | "GNU"
-    | (string & {});
+export type Style = "LLVM" | "Google" | "Chromium" | "Mozilla" | "WebKit" | "Microsoft" | "GNU" | (string & {});
 
 export type Filename =
     | "main.c"
@@ -39,10 +26,6 @@ export type Filename =
  * @param style The style to use for formatting
  * @see https://clang.llvm.org/docs/ClangFormatStyleOptions.html
  */
-export declare function format(
-    content: string,
-    filename?: Filename,
-    style?: Style
-): void;
+export declare function format(content: string, filename?: Filename, style?: Style): string;
 
 export declare function version(): string;
