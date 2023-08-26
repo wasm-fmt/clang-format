@@ -39,12 +39,18 @@ async function load(module) {
     return module;
 }
 
+let _module;
 export default async function init(wasm_url) {
-    const module = await load(wasm_url);
-    const result = await Module({ wasm: module });
+    if (_module) {
+        await _module;
+        return;
+    }
 
-    version = result.version;
-    format_with_style = result.format_with_style;
+    _module = load(wasm_url).then((wasm) => Module({ wasm }));
+    await _module;
+
+    version = _module.version;
+    format_with_style = _module.format_with_style;
 }
 
 function format_with_style() {
