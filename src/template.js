@@ -47,10 +47,10 @@ export default async function init(wasm_url) {
     }
 
     _module = load(wasm_url).then((wasm) => Module({ wasm }));
-    await _module;
+    const moduel = await _module;
 
-    version = _module.version;
-    format_with_style = _module.format_with_style;
+    version = moduel.version;
+    format_with_style = moduel.format_with_style;
 }
 
 function format_with_style() {
