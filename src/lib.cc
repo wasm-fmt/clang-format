@@ -126,8 +126,26 @@ static auto format(const std::string str, const std::string assumedFileName, con
         return "\0" + err;
     }
 
+    IntrusiveRefCntPtr<llvm::vfs::InMemoryFileSystem> InMemoryFileSystem(new llvm::vfs::InMemoryFileSystem);
+    FileManager Files(FileSystemOptions(), InMemoryFileSystem);
+
+    IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts(new DiagnosticOptions());
+    ClangFormatDiagConsumer IgnoreDiagnostics;
+    DiagnosticsEngine Diagnostics(IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs), &*DiagOpts, &IgnoreDiagnostics,
+                                  false);
+    SourceManager Sources(Diagnostics, Files);
+
+    StringRef _style = style;
+
+    if (_style.startswith("---")) {
+        std::unique_ptr<llvm::MemoryBuffer> DotClangFormat = MemoryBuffer::getMemBuffer(style);
+
+        createInMemoryFile(".clang-format", *DotClangFormat.get(), Sources, Files, InMemoryFileSystem.get());
+        _style = "file:.clang-format";
+    }
+
     llvm::Expected<FormatStyle> FormatStyle =
-        getStyle(style, AssumedFileName, FallbackStyle, Code->getBuffer(), nullptr, false);
+        getStyle(_style, AssumedFileName, FallbackStyle, Code->getBuffer(), InMemoryFileSystem.get(), false);
     if (!FormatStyle) {
         std::string err = llvm::toString(FormatStyle.takeError());
         llvm::errs() << err << "\n";
@@ -182,19 +200,13 @@ static auto format(const std::string str, const std::string assumedFileName, con
     Replacements FormatChanges = reformat(*FormatStyle, *ChangedCode, Ranges, AssumedFileName, &Status);
     Replaces = Replaces.merge(FormatChanges);
 
-    IntrusiveRefCntPtr<llvm::vfs::InMemoryFileSystem> InMemoryFileSystem(new llvm::vfs::InMemoryFileSystem);
-    FileManager Files(FileSystemOptions(), InMemoryFileSystem);
-
-    IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts(new DiagnosticOptions());
-    ClangFormatDiagConsumer IgnoreDiagnostics;
-    DiagnosticsEngine Diagnostics(IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs), &*DiagOpts, &IgnoreDiagnostics,
-                                  false);
-    SourceManager Sources(Diagnostics, Files);
     FileID ID = createInMemoryFile(AssumedFileName, *Code, Sources, Files, InMemoryFileSystem.get());
     Rewriter Rewrite(Sources, LangOptions());
     tooling::applyAllReplacements(Replaces, Rewrite);
 
     auto& buf = Rewrite.getEditBuffer(ID);
+
+    InMemoryFileSystem.reset();
 
     return std::string(buf.begin(), buf.end());
 }
