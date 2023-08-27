@@ -1,10 +1,8 @@
 {
+    "ecma": 2017,
     "module": true,
-    "compress": false,
-    "mangle": {},
-    "output": {
-        "ecma": 2017
+    "compress": {
+        "passes": 2
     },
-    "parse": {},
-    "rename": false
+    "mangle": true
 }
