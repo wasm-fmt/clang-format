@@ -1,5 +1,3 @@
-var wasmExports;
-
 async function load(module) {
     switch (typeof module) {
         case "undefined":
