@@ -1,9 +1,11 @@
 async function load(module) {
     switch (typeof module) {
         case "undefined":
-            module = "clang-format.wasm";
+            module = new URL("./clang-format.wasm", import.meta.url);
+            break;
         case "string":
             module = new URL(module, import.meta.url);
+            break;
     }
 
     if (module instanceof URL || module instanceof Request) {
