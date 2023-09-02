@@ -2,7 +2,7 @@
 # This is the main config file for this project:
 root = true
 
-[*]
+[src/*]
 charset = utf-8
 trim_trailing_whitespace = true
 end_of_line = lf
