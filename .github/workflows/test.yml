@@ -1,10 +1,12 @@
 name: Test
 
-on: [push, pull_request]
+on:
+    - push
+    - pull_request
 
 jobs:
-    test:
-        name: test
+    build:
+        name: build
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v3
@@ -30,12 +32,57 @@ jobs:
               run: ./scripts/build.sh
 
             - name: Pack
-              run: |
-                  cd npm
-                  npm pack
+              run: cd npm && npm pack
 
             - name: Upload
               uses: actions/upload-artifact@v3
               with:
-                  name: npm
-                  path: npm/*.tgz
+                  name: build
+                  path: npm
+
+    node-test:
+        runs-on: ubuntu-latest
+        needs: build
+        steps:
+            - uses: actions/checkout@v3
+            - uses: actions/download-artifact@v3
+              with:
+                  name: build
+                  path: npm/
+
+            - uses: actions/setup-node@v3
+              with:
+                  node-version-file: ".node-version"
+
+            - run: node --test
+
+    deno-test:
+        runs-on: ubuntu-latest
+        needs: build
+        steps:
+            - uses: actions/checkout@v3
+            - uses: actions/download-artifact@v3
+              with:
+                  name: build
+                  path: npm/
+
+            - uses: denoland/setup-deno@v1
+              with:
+                  deno-version: v1.x
+
+            - run: deno test --allow-read
+
+    bun-test:
+        runs-on: ubuntu-latest
+        needs: build
+        steps:
+            - uses: actions/checkout@v3
+            - uses: actions/download-artifact@v3
+              with:
+                  name: build
+                  path: npm/
+
+            - uses: oven-sh/setup-bun@v1
+              name: Install bun
+
+            - run: bun test test_bun

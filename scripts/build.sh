@@ -20,6 +20,7 @@ EXTRA_EXE_LINKER_FLAGS="-lembind \
                         -sMODULARIZE \
                         -sENVIRONMENT=web \
                         -sIMPORTED_MEMORY \
+                        -sALLOW_MEMORY_GROWTH \
                         --pre-js=$project_root/src/pre.js"
 
 emcmake cmake -G Ninja -DCMAKE_BUILD_TYPE=MinSizeRel \

@@ -3,3 +3,6 @@
 *.js linguist-detectable=false
 *.mjs linguist-detectable=false
 *.sh linguist-detectable=false
+
+test_*/* linguist-detectable=false
+test_*/**/* linguist-detectable=false
