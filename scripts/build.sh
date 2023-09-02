@@ -4,6 +4,8 @@ project_root=$(pwd)
 rm -rf npm
 mkdir npm
 
+cp third_party/llvm-project/clang/tools/clang-format/ClangFormat.cpp third_party/llvm-project/clang/tools/clang-format/ClangFormat.cpp.backup
+
 cp src/lib.cc third_party/llvm-project/clang/tools/clang-format/ClangFormat.cpp
 cd third_party/llvm-project
 rm -rf build
@@ -40,3 +42,6 @@ npm exec terser -- $project_root/src/template.js bin/clang-format-mod.js --confi
 cd $project_root
 cp src/clang-format.d.ts src/vite.js npm
 cp package.json LICENSE README.md .npmignore npm
+
+cd $project_root
+mv third_party/llvm-project/clang/tools/clang-format/ClangFormat.cpp.backup third_party/llvm-project/clang/tools/clang-format/ClangFormat.cpp
