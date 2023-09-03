@@ -14,8 +14,6 @@
 
 #include <emscripten/bind.h>
 #include <sstream>
-#include "clang/Basic/Diagnostic.h"
-#include "clang/Basic/DiagnosticOptions.h"
 #include "clang/Basic/FileManager.h"
 #include "clang/Basic/SourceManager.h"
 #include "clang/Basic/Version.h"
@@ -67,29 +65,8 @@ static FileID createInMemoryFile(StringRef FileName,
 }
 
 static auto fillRanges(MemoryBuffer* Code, std::vector<tooling::Range>& Ranges) -> void {
-    IntrusiveRefCntPtr<llvm::vfs::InMemoryFileSystem> InMemoryFileSystem(new llvm::vfs::InMemoryFileSystem);
-    FileManager Files(FileSystemOptions(), InMemoryFileSystem);
-    DiagnosticsEngine Diagnostics(IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs), new DiagnosticOptions);
-    SourceManager Sources(Diagnostics, Files);
-    FileID ID = createInMemoryFile("<irrelevant>", *Code, Sources, Files, InMemoryFileSystem.get());
-
-    SourceLocation Start = Sources.getLocForStartOfFile(ID).getLocWithOffset(0);
-    SourceLocation End = Sources.getLocForEndOfFile(ID);
-
-    unsigned Offset = Sources.getFileOffset(Start);
-    unsigned Length = Sources.getFileOffset(End) - Offset;
-    Ranges.push_back(tooling::Range(Offset, Length));
+    Ranges.push_back(tooling::Range(0, Code->getBuffer().size()));
 }
-
-class ClangFormatDiagConsumer : public DiagnosticConsumer {
-    virtual void anchor() {}
-
-    void HandleDiagnostic(DiagnosticsEngine::Level DiagLevel, const Diagnostic& Info) override {
-        SmallVector<char, 16> vec;
-        Info.FormatDiagnostic(vec);
-        llvm::errs() << "clang-format error:" << vec << "\n";
-    }
-};
 
 // Returns true on error.
 static auto format(const std::string str, const std::string assumedFileName, const std::string style) -> std::string {
@@ -121,18 +98,14 @@ static auto format(const std::string str, const std::string assumedFileName, con
 
     StringRef AssumedFileName = assumedFileName;
     if (AssumedFileName.empty()) {
-        std::string err = "error: no file name given";
-        llvm::errs() << err << "\n";
-        return "\0" + err;
+        AssumedFileName = "<stdin>";
     }
 
     IntrusiveRefCntPtr<llvm::vfs::InMemoryFileSystem> InMemoryFileSystem(new llvm::vfs::InMemoryFileSystem);
     FileManager Files(FileSystemOptions(), InMemoryFileSystem);
 
     IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts(new DiagnosticOptions());
-    ClangFormatDiagConsumer IgnoreDiagnostics;
-    DiagnosticsEngine Diagnostics(IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs), &*DiagOpts, &IgnoreDiagnostics,
-                                  false);
+    DiagnosticsEngine Diagnostics(IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs), &*DiagOpts);
     SourceManager Sources(Diagnostics, Files);
 
     StringRef _style = style;
@@ -146,6 +119,9 @@ static auto format(const std::string str, const std::string assumedFileName, con
 
     llvm::Expected<FormatStyle> FormatStyle =
         getStyle(_style, AssumedFileName, FallbackStyle, Code->getBuffer(), InMemoryFileSystem.get(), false);
+
+    InMemoryFileSystem.reset();
+
     if (!FormatStyle) {
         std::string err = llvm::toString(FormatStyle.takeError());
         llvm::errs() << err << "\n";
@@ -188,27 +164,15 @@ static auto format(const std::string str, const std::string assumedFileName, con
             llvm::errs() << "Bad Json variable insertion\n";
     }
 
-    auto ChangedCode = tooling::applyAllReplacements(Code->getBuffer(), Replaces);
-    if (!ChangedCode) {
-        std::string err = llvm::toString(ChangedCode.takeError());
-        llvm::errs() << err << "\n";
-        return "\0" + err;
-    }
+    auto ChangedCode = cantFail(tooling::applyAllReplacements(Code->getBuffer(), Replaces));
+
     // Get new affected ranges after sorting `#includes`.
     Ranges = tooling::calculateRangesAfterReplacements(Replaces, Ranges);
     FormattingAttemptStatus Status;
-    Replacements FormatChanges = reformat(*FormatStyle, *ChangedCode, Ranges, AssumedFileName, &Status);
+    Replacements FormatChanges = reformat(*FormatStyle, ChangedCode, Ranges, AssumedFileName, &Status);
     Replaces = Replaces.merge(FormatChanges);
 
-    FileID ID = createInMemoryFile(AssumedFileName, *Code, Sources, Files, InMemoryFileSystem.get());
-    Rewriter Rewrite(Sources, LangOptions());
-    tooling::applyAllReplacements(Replaces, Rewrite);
-
-    auto& buf = Rewrite.getEditBuffer(ID);
-
-    InMemoryFileSystem.reset();
-
-    return std::string(buf.begin(), buf.end());
+    return cantFail(tooling::applyAllReplacements(Code->getBuffer(), Replaces));
 }
 
 }  // namespace format
