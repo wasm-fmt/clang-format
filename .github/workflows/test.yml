@@ -9,9 +9,7 @@ jobs:
         name: build
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v3
-              with:
-                  submodules: "recursive"
+            - uses: actions/checkout@v4
             - name: Install llvm and clang
               run: sudo apt-get install llvm clang
             - name: Install CMake

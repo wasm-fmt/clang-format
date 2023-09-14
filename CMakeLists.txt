@@ -1,6 +1,8 @@
-cmake_minimum_required(VERSION 3.20.0)
+cmake_minimum_required(VERSION 3.24.0)
 
 project(clang-format-wasm)
+
+include(FetchContent)
 
 set(LLVM_ENABLE_PROJECTS clang CACHE STRING "")
 
@@ -8,7 +10,15 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "MinSizeRel")
 endif()
 
-add_subdirectory(third_party/llvm-project/llvm)
+set(LLVM_VERSION "16.0.6")
+
+FetchContent_Declare(llvm
+    URL "https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/llvm-project-${LLVM_VERSION}.src.tar.xz"
+    URL_HASH SHA256=ce5e71081d17ce9e86d7cbcfa28c4b04b9300f8fb7e78422b1feb6bc52c3028e
+    TLS_VERIFY TRUE
+)
+FetchContent_Populate(llvm)
+add_subdirectory(${llvm_SOURCE_DIR}/llvm)
 
 set(LLVM_INCLUDE_DIRS
     ${LLVM_SOURCE_DIR}/include

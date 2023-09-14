@@ -1,8 +1,10 @@
+set -Eeuo pipefail
+
 cd $(dirname $0)/..
 project_root=$(pwd)
 
-rm -rf npm build
-mkdir npm build
+rm -rf npm
+mkdir -p npm build
 cd build
 
 emcmake cmake -G Ninja \
