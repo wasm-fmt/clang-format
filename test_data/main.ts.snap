@@ -3534,8 +3534,7 @@ export function createTypeChecker(host: TypeCheckerHost): TypeChecker {
     let grandparent: Node;
     let isInExternalModule = false;
 
-  loop:
-    while (location) {
+    loop: while (location) {
       if (name === "const" && isConstAssertion(location)) {
         // `const` in an `as const` has no symbol, but issues no error because
         // there is no *actual* lookup of the type (it refers to the constant
@@ -17789,10 +17788,8 @@ export function createTypeChecker(host: TypeCheckerHost): TypeChecker {
   }
 
   type ReplaceableIndexedAccessType = IndexedAccessType&{
-  objectType:
-    TypeParameter;
-  indexType:
-    TypeParameter;
+    objectType: TypeParameter;
+    indexType: TypeParameter;
   };
   function replaceIndexedAccess(instantiable: Type,
                                 type: ReplaceableIndexedAccessType,
@@ -30349,8 +30346,7 @@ export function createTypeChecker(host: TypeCheckerHost): TypeChecker {
       const matchingTypes: Type[] = [];
       for (const combination of discriminantCombinations) {
         let hasMatch = false;
-      outer:
-        for (const type of target.types) {
+        outer: for (const type of target.types) {
           for (let i = 0; i < sourcePropertiesFiltered.length; i++) {
             const sourceProperty = sourcePropertiesFiltered[i];
             const targetProperty =
@@ -31000,8 +30996,7 @@ export function createTypeChecker(host: TypeCheckerHost): TypeChecker {
           return result;
         }
       } else {
-      outer:
-        for (const t of targetSignatures) {
+        outer: for (const t of targetSignatures) {
           const saveErrorInfo = captureErrorCalculationState();
           // Only elaborate errors from the first failure
           let shouldElaborateErrors = reportErrors;
@@ -47637,10 +47632,7 @@ export function createTypeChecker(host: TypeCheckerHost): TypeChecker {
            symbol.valueDeclaration.name;
   }
   function isValidDeclarationForTupleLabel(d: Declaration):
-      d is NamedTupleMember|(ParameterDeclaration & {
-        name:
-          Identifier;
-      }) {
+      d is NamedTupleMember|(ParameterDeclaration & { name: Identifier; }) {
     return d.kind === SyntaxKind.NamedTupleMember ||
            (isParameter(d) && d.name && isIdentifier(d.name));
   }
@@ -52325,10 +52317,8 @@ export function createTypeChecker(host: TypeCheckerHost): TypeChecker {
     const indexSymbol = getIndexSymbol(getSymbolOfDeclaration(node)!);
     if (indexSymbol?.declarations) {
       const indexSignatureMap = new Map < TypeId, {
-      type:
-        Type;
-      declarations:
-        IndexSignatureDeclaration[];
+        type: Type;
+        declarations: IndexSignatureDeclaration[];
       }
       > ();
       for (const declaration of (indexSymbol.declarations as
@@ -58681,8 +58671,7 @@ export function createTypeChecker(host: TypeCheckerHost): TypeChecker {
     // NOTE: assignability is checked in checkClassDeclaration
     const baseProperties = getPropertiesOfType(baseType);
     let inheritedAbstractMemberNotImplementedError: Diagnostic|undefined;
-  basePropertyCheck:
-    for (const baseProperty of baseProperties) {
+    basePropertyCheck: for (const baseProperty of baseProperties) {
       const base = getTargetSymbol(baseProperty);
 
       if (base.flags & SymbolFlags.Prototype) {
@@ -61512,10 +61501,8 @@ export function createTypeChecker(host: TypeCheckerHost): TypeChecker {
       Debug.assert(!isInJSFile(
           name)); // Otherwise `isDeclarationName` would have been true.
       const typeParameter =
-          getTypeParameterFromJsDoc(name.parent as TypeParameterDeclaration & {
-            parent:
-              JSDocTemplateTag;
-          });
+          getTypeParameterFromJsDoc(name.parent as TypeParameterDeclaration &
+                                    { parent: JSDocTemplateTag; });
       return typeParameter && typeParameter.symbol;
     }
 

@@ -2084,9 +2084,7 @@ void JS_FreeRuntime(JSRuntime *rt) {
     if (s->malloc_count > 1) {
       if (rt->rt_info)
         printf("%s:1: ", rt->rt_info);
-      printf("Memory leak: %"PRIu64
-             " bytes lost in %"PRIu64
-             " block%s\n",
+      printf("Memory leak: %" PRIu64 " bytes lost in %" PRIu64 " block%s\n",
              (uint64_t)(s->malloc_size - sizeof(JSRuntime)),
              (uint64_t)(s->malloc_count - 1), &"s"[s->malloc_count == 2]);
     }
@@ -2350,7 +2348,7 @@ static inline BOOL is_math_mode(JSContext *ctx) {
 #define JS_ATOM_MAX ((1U << 30) - 1)
 
 /* return the max count from the hash size */
-#define JS_ATOM_COUNT_RESIZE(n) ((n) * 2)
+#define JS_ATOM_COUNT_RESIZE(n) ((n)*2)
 
 static inline BOOL __JS_AtomIsConst(JSAtom v) {
 #if defined(DUMP_LEAKS) && DUMP_LEAKS > 1
@@ -5954,8 +5952,7 @@ void JS_DumpMemoryUsage(FILE *fp, const JSMemoryUsage *s, JSRuntime *rt) {
 #ifdef CONFIG_BIGNUM
           "BigNum "
 #endif
-          CONFIG_VERSION " version, %d-bit, malloc limit: %"PRId64
-          "\n\n",
+          CONFIG_VERSION " version, %d-bit, malloc limit: %" PRId64 "\n\n",
           (int)sizeof(void *) * 8, (int64_t)(ssize_t)s->malloc_limit);
 #if 1
   if (rt) {
@@ -6020,15 +6017,11 @@ void JS_DumpMemoryUsage(FILE *fp, const JSMemoryUsage *s, JSRuntime *rt) {
   fprintf(fp, "%-20s %8s %8s\n", "NAME", "COUNT", "SIZE");
 
   if (s->malloc_count) {
-    fprintf(fp,
-            "%-20s %8"PRId64
-            " %8"PRId64
-            "  (%0.1f per block)\n",
+    fprintf(fp, "%-20s %8" PRId64 " %8" PRId64 "  (%0.1f per block)\n",
             "memory allocated", s->malloc_count, s->malloc_size,
             (double)s->malloc_size / s->malloc_count);
     fprintf(fp,
-            "%-20s %8"PRId64
-            " %8"PRId64
+            "%-20s %8" PRId64 " %8" PRId64
             "  (%d overhead, %0.1f average slack)\n",
             "memory used", s->memory_used_count, s->memory_used_size,
             MALLOC_OVERHEAD,
@@ -6036,93 +6029,53 @@ void JS_DumpMemoryUsage(FILE *fp, const JSMemoryUsage *s, JSRuntime *rt) {
              s->memory_used_count));
   }
   if (s->atom_count) {
-    fprintf(fp,
-            "%-20s %8"PRId64
-            " %8"PRId64
-            "  (%0.1f per atom)\n",
-            "atoms", s->atom_count, s->atom_size,
-            (double)s->atom_size / s->atom_count);
+    fprintf(fp, "%-20s %8" PRId64 " %8" PRId64 "  (%0.1f per atom)\n", "atoms",
+            s->atom_count, s->atom_size, (double)s->atom_size / s->atom_count);
   }
   if (s->str_count) {
-    fprintf(fp,
-            "%-20s %8"PRId64
-            " %8"PRId64
-            "  (%0.1f per string)\n",
+    fprintf(fp, "%-20s %8" PRId64 " %8" PRId64 "  (%0.1f per string)\n",
             "strings", s->str_count, s->str_size,
             (double)s->str_size / s->str_count);
   }
   if (s->obj_count) {
-    fprintf(fp,
-            "%-20s %8"PRId64
-            " %8"PRId64
-            "  (%0.1f per object)\n",
+    fprintf(fp, "%-20s %8" PRId64 " %8" PRId64 "  (%0.1f per object)\n",
             "objects", s->obj_count, s->obj_size,
             (double)s->obj_size / s->obj_count);
-    fprintf(fp,
-            "%-20s %8"PRId64
-            " %8"PRId64
-            "  (%0.1f per object)\n",
+    fprintf(fp, "%-20s %8" PRId64 " %8" PRId64 "  (%0.1f per object)\n",
             "  properties", s->prop_count, s->prop_size,
             (double)s->prop_count / s->obj_count);
-    fprintf(fp,
-            "%-20s %8"PRId64
-            " %8"PRId64
-            "  (%0.1f per shape)\n",
+    fprintf(fp, "%-20s %8" PRId64 " %8" PRId64 "  (%0.1f per shape)\n",
             "  shapes", s->shape_count, s->shape_size,
             (double)s->shape_size / s->shape_count);
   }
   if (s->js_func_count) {
-    fprintf(fp,
-            "%-20s %8"PRId64
-            " %8"PRId64
-            "\n",
-            "bytecode functions", s->js_func_count, s->js_func_size);
-    fprintf(fp,
-            "%-20s %8"PRId64
-            " %8"PRId64
-            "  (%0.1f per function)\n",
+    fprintf(fp, "%-20s %8" PRId64 " %8" PRId64 "\n", "bytecode functions",
+            s->js_func_count, s->js_func_size);
+    fprintf(fp, "%-20s %8" PRId64 " %8" PRId64 "  (%0.1f per function)\n",
             "  bytecode", s->js_func_count, s->js_func_code_size,
             (double)s->js_func_code_size / s->js_func_count);
     if (s->js_func_pc2line_count) {
-      fprintf(fp,
-              "%-20s %8"PRId64
-              " %8"PRId64
-              "  (%0.1f per function)\n",
+      fprintf(fp, "%-20s %8" PRId64 " %8" PRId64 "  (%0.1f per function)\n",
               "  pc2line", s->js_func_pc2line_count, s->js_func_pc2line_size,
               (double)s->js_func_pc2line_size / s->js_func_pc2line_count);
     }
   }
   if (s->c_func_count) {
-    fprintf(fp,
-            "%-20s %8"PRId64
-            "\n",
-            "C functions", s->c_func_count);
+    fprintf(fp, "%-20s %8" PRId64 "\n", "C functions", s->c_func_count);
   }
   if (s->array_count) {
-    fprintf(fp,
-            "%-20s %8"PRId64
-            "\n",
-            "arrays", s->array_count);
+    fprintf(fp, "%-20s %8" PRId64 "\n", "arrays", s->array_count);
     if (s->fast_array_count) {
-      fprintf(fp,
-              "%-20s %8"PRId64
-              "\n",
-              "  fast arrays", s->fast_array_count);
-      fprintf(fp,
-              "%-20s %8"PRId64
-              " %8"PRId64
-              "  (%0.1f per fast array)\n",
+      fprintf(fp, "%-20s %8" PRId64 "\n", "  fast arrays", s->fast_array_count);
+      fprintf(fp, "%-20s %8" PRId64 " %8" PRId64 "  (%0.1f per fast array)\n",
               "  elements", s->fast_array_elements,
               s->fast_array_elements * (int)sizeof(JSValue),
               (double)s->fast_array_elements / s->fast_array_count);
     }
   }
   if (s->binary_object_count) {
-    fprintf(fp,
-            "%-20s %8"PRId64
-            " %8"PRId64
-            "\n",
-            "binary objects", s->binary_object_count, s->binary_object_size);
+    fprintf(fp, "%-20s %8" PRId64 " %8" PRId64 "\n", "binary objects",
+            s->binary_object_count, s->binary_object_size);
   }
 }
 
@@ -12400,7 +12353,7 @@ js_unary_arith_slow(JSContext *ctx, JSValue *sp, OPCodeEnum op) {
       goto exception;
     break;
   default:
-  handle_float64: {
+  handle_float64 : {
     double d;
     if (is_math_mode(ctx))
       goto handle_bigint;
@@ -19411,7 +19364,7 @@ dump_token(JSParseState *s, const JSToken *token) {
     printf("number: %.14g\n", d);
   } break;
   case TOK_IDENT:
-  dump_atom: {
+  dump_atom : {
     char buf[ATOM_GET_STR_BUF_SIZE];
     printf("ident: '%s'\n",
            JS_AtomGetStr(s->ctx, buf, sizeof(buf), token->u.ident.atom));
@@ -20144,7 +20097,7 @@ redo:
   case '8':
   case '9':
     /* number */
-  parse_number: {
+  parse_number : {
     JSValue ret;
     const uint8_t *p1;
     int flags, radix;
@@ -20655,7 +20608,7 @@ redo:
   case '8':
   case '9':
     /* number */
-  parse_number: {
+  parse_number : {
     JSValue ret;
     int flags, radix;
     if (!s->ext_json) {
@@ -23598,7 +23551,7 @@ static __exception int js_parse_postfix_expr(JSParseState *s, int parse_flags) {
     goto parse_regexp;
   case '/':
     s->buf_ptr--;
-  parse_regexp: {
+  parse_regexp : {
     JSValue str;
     int ret, backtrace_flags;
     if (!s->ctx->compile_regexp)
