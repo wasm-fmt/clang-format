@@ -7,10 +7,10 @@ rm -rf npm
 mkdir -p npm build
 cd build
 
-emcmake cmake -G Ninja \
-    -DCMAKE_C_COMPILER=$(which clang) \
-    -DCMAKE_CXX_COMPILER=$(which clang++) \
-    ..
+export CC=$(which clang)
+export CXX=$(which clang++)
+
+emcmake cmake -G Ninja ..
 ninja clang-format-wasm
 
 cd $project_root

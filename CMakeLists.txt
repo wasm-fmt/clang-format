@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24.0)
 
-project(clang-format-wasm)
+message(STATUS "Using toolchain file: ${CMAKE_TOOLCHAIN_FILE}")
 
 include(FetchContent)
 
@@ -16,13 +16,10 @@ FetchContent_Declare(llvm_project
     URL "https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/llvm-project-${LLVM_VERSION}.src.tar.xz"
     URL_HASH SHA256=ce5e71081d17ce9e86d7cbcfa28c4b04b9300f8fb7e78422b1feb6bc52c3028e
     TLS_VERIFY TRUE
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
 
-FetchContent_GetProperties(llvm_project)
-
-if(NOT llvm_project_POPULATED)
-    FetchContent_Populate(llvm_project)
-endif()
+FetchContent_MakeAvailable(llvm_project)
 
 add_subdirectory(${llvm_project_SOURCE_DIR}/llvm)
 
@@ -40,6 +37,7 @@ set(LLVM_LIBRARIES
     clangToolingCore
 )
 
+project(clang-format-wasm)
 add_executable(clang-format-wasm src/lib.cc)
 
 target_include_directories(clang-format-wasm PRIVATE ${LLVM_INCLUDE_DIRS})
