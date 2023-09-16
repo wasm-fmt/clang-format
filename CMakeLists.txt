@@ -51,6 +51,7 @@ target_link_libraries(clang-format-wasm PRIVATE
     ${LLVM_LIBRARIES}
     "-lembind"
     "-fno-rtti"
+    "-flto"
     "-s MINIMAL_RUNTIME=1"
     "-s DYNAMIC_EXECUTION=0"
     "-s FILESYSTEM=0"
