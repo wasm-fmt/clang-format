@@ -1,7 +1,7 @@
 name: Publish
 
 on:
-    create:
+    push:
         tags:
             - "v*"
 
@@ -32,8 +32,15 @@ jobs:
                   node-version-file: ".node-version"
                   registry-url: "https://registry.npmjs.org"
 
+            - name: Install wasm-opt
+              run: |
+                  npm install -g binaryen
+
             - name: Build
               run: ./scripts/build.sh
+              shell: bash
+              env:
+                  WASM_OPT: 1
 
             - name: Publish to npm
               run: cd npm && npm publish --provenance
