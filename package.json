@@ -32,8 +32,7 @@
     ],
     "license": "MIT",
     "publishConfig": {
-        "access": "public",
-        "provenance": true
+        "access": "public"
     },
     "bugs": {
         "url": "https://github.com/wasm-fmt/clang-format/issues"
