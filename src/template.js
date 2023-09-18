@@ -17,7 +17,7 @@ async function load(module) {
         }
     }
 
-    if (module instanceof Response) {
+    if (typeof Response === 'function' && module instanceof Response) {
         if ("compileStreaming" in WebAssembly) {
             try {
                 return await WebAssembly.compileStreaming(module);
