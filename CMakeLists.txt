@@ -59,5 +59,4 @@ target_link_libraries(clang-format-wasm PRIVATE
     "-s ENVIRONMENT=web"
     "-s IMPORTED_MEMORY=1"
     "-s ALLOW_MEMORY_GROWTH=1"
-    "--pre-js=${PROJECT_SOURCE_DIR}/src/pre.js"
 )

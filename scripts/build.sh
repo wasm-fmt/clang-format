@@ -27,5 +27,5 @@ SMALLEST_WASM=$(ls -Sr build/*.wasm | head -1)
 cp $SMALLEST_WASM npm/clang-format.wasm
 npm exec terser -- src/template.js build/clang-format.js --config-file .terser.json --output npm/clang-format.js
 
-cp src/clang-format.d.ts src/vite.js npm
+cp src/clang-format.d.ts src/clang-format-*.js npm
 cp package.json LICENSE README.md .npmignore npm

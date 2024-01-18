@@ -1,23 +1,5 @@
 async function load(module) {
-    switch (typeof module) {
-        case "undefined":
-            module = new URL("./clang-format.wasm", import.meta.url);
-            break;
-        case "string":
-            module = new URL(module, import.meta.url);
-            break;
-    }
-
-    if (module instanceof URL || module instanceof Request) {
-        if (typeof __webpack_require__ !== "function" && module.protocol === "file:") {
-            const fs = await import("node:fs/promises");
-            module = await fs.readFile(module);
-        } else {
-            module = await fetch(module);
-        }
-    }
-
-    if (typeof Response === 'function' && module instanceof Response) {
+    if (typeof Response === "function" && module instanceof Response) {
         if ("compileStreaming" in WebAssembly) {
             try {
                 return await WebAssembly.compileStreaming(module);
@@ -39,18 +21,27 @@ async function load(module) {
     return module;
 }
 
-let _module;
-export default async function init(wasm_url) {
-    if (_module) {
-        await _module;
-        return;
+let wasm;
+export default async function initAsync(input) {
+    if (wasm !== undefined) {
+        return wasm;
     }
 
-    _module = load(wasm_url).then((wasm) => Module({ wasm }));
-    const moduel = await _module;
+    if (typeof input === "undefined") {
+        input = new URL("clang-format.wasm", import.meta.url);
+    }
 
-    version = moduel.version;
-    format_with_style = moduel.format_with_style;
+    if (
+        typeof input === "string" ||
+        (typeof Request === "function" && input instanceof Request) ||
+        (typeof URL === "function" && input instanceof URL)
+    ) {
+        input = fetch(input);
+    }
+
+    wasm = await load(await input).then((wasm) => Module({ wasm }));
+    version = wasm.version;
+    format_with_style = wasm.format_with_style;
 }
 
 function format_with_style() {

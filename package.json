@@ -13,11 +13,12 @@
     "exports": {
         ".": {
             "types": "./clang-format.d.ts",
+            "node": "./clang-format-node.js",
             "default": "./clang-format.js"
         },
         "./vite": {
             "types": "./clang-format.d.ts",
-            "default": "./vite.js"
+            "default": "./clang-format-vite.js"
         },
         "./package.json": "./package.json",
         "./*": "./*"

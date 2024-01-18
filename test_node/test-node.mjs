@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
-import init, { format } from "../npm/clang-format.js";
+import init, { format } from "../npm/clang-format-node.js";
 
 await init();
 
@@ -14,7 +14,7 @@ for await (const dirent of await fs.opendir(test_root, { recursive: true })) {
         continue;
     }
 
-    const input_path = dirent.path;
+    const input_path = path.join(dirent.path, dirent.name);
     const ext = path.extname(input_path);
 
     switch (ext) {
