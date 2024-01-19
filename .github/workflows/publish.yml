@@ -27,7 +27,7 @@ jobs:
                   version: 3.1.51
 
             - name: Install Node
-              uses: actions/setup-node@v3
+              uses: actions/setup-node@v4
               with:
                   node-version-file: ".node-version"
                   registry-url: "https://registry.npmjs.org"
@@ -47,7 +47,7 @@ jobs:
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-            - uses: actions/setup-node@v3
+            - uses: actions/setup-node@v4
               with:
                   node-version-file: ".node-version"
                   registry-url: "https://npm.pkg.github.com"
