@@ -59,4 +59,5 @@ target_link_libraries(clang-format-wasm PRIVATE
     "-s ENVIRONMENT=web"
     "-s IMPORTED_MEMORY=1"
     "-s ALLOW_MEMORY_GROWTH=1"
+    "-s MINIMAL_RUNTIME_STREAMING_WASM_COMPILATION=1"
 )
