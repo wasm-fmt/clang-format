@@ -65,3 +65,4 @@ jobs:
               with:
                   files: |
                       npm/*.tgz
+                      npm/*.wasm
