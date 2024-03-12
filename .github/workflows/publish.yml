@@ -61,7 +61,7 @@ jobs:
               run: cd npm && npm pack
 
             - name: Publish to Github Releases
-              uses: softprops/action-gh-release@c9b46fe7aad9f02afd89b12450b780f52dacfb2d
+              uses: softprops/action-gh-release@9d7c94cfd0a1f3ed45544c887983e9fa900f0564
               with:
                   files: |
                       npm/*.tgz
