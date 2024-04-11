@@ -1,11 +1,16 @@
+# WASM Clang Format
+
 [![Test](https://github.com/wasm-fmt/clang-format/actions/workflows/test.yml/badge.svg)](https://github.com/wasm-fmt/clang-format/actions/workflows/test.yml)
 [![npm](https://img.shields.io/npm/v/@wasm-fmt/clang-format)](https://www.npmjs.com/package/@wasm-fmt/clang-format)
+
+[Try it in your browser](https://agrawal-d.com/web-clang-format/)
 
 # Install
 
 ```bash
 npm install @wasm-fmt/clang-format
 ```
+
 
 # Usage
 
