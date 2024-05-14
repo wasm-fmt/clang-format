@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
-import init, { format } from "../npm/clang-format-node.js";
+import init, { format } from "../pkg/clang-format-node.js";
 
 await init();
 
