@@ -27,3 +27,5 @@ npm exec terser -- src/template.js build/clang-format-wasm.js --config-file .ter
 
 cp src/clang-format.d.ts src/clang-format-*.js npm
 cp package.json LICENSE README.md .npmignore npm
+
+./scripts/package.mjs ./package.json
