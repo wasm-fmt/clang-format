@@ -2,7 +2,7 @@
 import { assertEquals } from "https://deno.land/std@0.201.0/assert/mod.ts";
 import { walk } from "https://deno.land/std@0.201.0/fs/walk.ts";
 import { relative } from "https://deno.land/std@0.201.0/path/mod.ts";
-import init, { format } from "../npm/clang-format.js";
+import init, { format } from "../pkg/clang-format.js";
 
 await init();
 
