@@ -10,7 +10,7 @@ const pkg_json = JSON.parse(pkg_text);
 // JSR
 
 const jsr_path = path.resolve(pkg_path, "..", "pkg", "jsr.jsonc");
-pkg_json.name = "@fmt/clang-fmt";
+pkg_json.name = "@fmt/clang-format";
 pkg_json.exports = "./clang-format.js";
 pkg_json.publish = {
     include: [

@@ -8,10 +8,10 @@
 npm install @wasm-fmt/clang-format
 ```
 
-[![jsr.io](https://jsr.io/badges/@fmt/clang-fmt?color=3572A5)](https://jsr.io/@fmt/clang-fmt)
+[![jsr.io](https://jsr.io/badges/@fmt/clang-format?color=3572A5)](https://jsr.io/@fmt/clang-format)
 
 ```bash
-npx jsr add @fmt/clang-fmt
+npx jsr add @fmt/clang-format
 ```
 
 # Usage
