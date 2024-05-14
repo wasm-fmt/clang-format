@@ -3,8 +3,8 @@ set -Eeo pipefail
 cd $(dirname $0)/..
 project_root=$(pwd)
 
-rm -rf npm
-mkdir -p npm build
+rm -rf pkg
+mkdir -p pkg build
 cd build
 
 export CC=$(which clang)
@@ -22,10 +22,10 @@ fi
 
 SMALLEST_WASM=$(ls -Sr build/*.wasm | head -1)
 
-cp $SMALLEST_WASM npm/clang-format.wasm
-npm exec terser -- src/template.js build/clang-format-wasm.js --config-file .terser.json --output npm/clang-format.js
+cp $SMALLEST_WASM pkg/clang-format.wasm
+npm exec terser -- src/template.js build/clang-format-wasm.js --config-file .terser.json --output pkg/clang-format.js
 
-cp src/clang-format.d.ts src/clang-format-*.js npm
-cp package.json LICENSE README.md .npmignore npm
+cp src/clang-format.d.ts src/clang-format-*.js pkg
+cp package.json LICENSE README.md .npmignore pkg
 
 ./scripts/package.mjs ./package.json

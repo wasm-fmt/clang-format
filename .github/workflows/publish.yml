@@ -43,7 +43,7 @@ jobs:
                   WASM_OPT: 1
 
             - name: Publish to npm
-              run: cd npm && npm publish --provenance
+              run: cd pkg && npm publish --provenance
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -53,19 +53,19 @@ jobs:
                   registry-url: "https://npm.pkg.github.com"
 
             - name: Publish to GitHub Packages
-              run: cd npm && npm publish
+              run: cd pkg && npm publish
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
             - name: Publish to jsr.io
-              run: cd npm && npx jsr publish
+              run: cd pkg && npx jsr publish
 
             - name: Pack
-              run: cd npm && npm pack
+              run: cd pkg && npm pack
 
             - name: Publish to Github Releases
               uses: softprops/action-gh-release@9d7c94cfd0a1f3ed45544c887983e9fa900f0564
               with:
                   files: |
-                      npm/*.tgz
-                      npm/*.wasm
+                      pkg/*.tgz
+                      pkg/*.wasm
