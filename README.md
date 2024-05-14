@@ -29,14 +29,14 @@ std::cout << "Hello World!" << std::endl;
 return 0;}
 `;
 
-// JSON/YAML representation of Clang-Format Style Options
+// JSON representation of Clang-Format Style Options
 const config = JSON.stringify({
   BasedOnStyle: "Chromium",
   IndentWidth: 4,
   ColumnLimit: 80,
 });
 
-// or
+// or YAML representation of Clang-Format Style Options which is used in `.clang-format` file
 const config2 = `---
 BasedOnStyle: Chromium
 IndentWidth: 4
@@ -44,6 +44,9 @@ ColumnLimit: 80
 
 ...
 `;
+
+// or the preset name
+const config3 = "Chromium";
 
 const formatted = format(
     source,
@@ -54,7 +57,12 @@ const formatted = format(
 console.log(formatted);
 ```
 
-The third argument of `format` accepts either a JSON or YAML representation of Clang-Format Style Options.
+The third argument of `format` is a Clang-Format Style Options, which can be one of the following:
+
+1. A preset: LLVM, GNU, Google, Chromium, Microsoft, Mozilla, WebKit.
+2. A YAML/JSON string representing the style options.
+3. the string content of a `.clang-format` file.
+
 See [Clang-Format Style Options](https://clang.llvm.org/docs/ClangFormatStyleOptions.html) for more information.
 
 # Build from source
