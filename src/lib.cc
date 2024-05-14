@@ -68,6 +68,12 @@ static auto fillRanges(MemoryBuffer* Code, std::vector<tooling::Range>& Ranges) 
     Ranges.push_back(tooling::Range(0, Code->getBuffer().size()));
 }
 
+static auto isPredefinedStyle(StringRef style) -> bool {
+    return StringSwitch<bool>(style.lower())
+        .Cases("llvm", "chromium", "mozilla", "google", "webkit", "gnu", "microsoft", "none", "file", true)
+        .Default(false);
+}
+
 // Returns true on error.
 static auto format(const std::string str, const std::string assumedFileName, const std::string style) -> std::string {
     ErrorOr<std::unique_ptr<MemoryBuffer>> CodeOrErr = MemoryBuffer::getMemBuffer(str);
@@ -110,7 +116,7 @@ static auto format(const std::string str, const std::string assumedFileName, con
 
     StringRef _style = style;
 
-    if (!_style.startswith("{")) {
+    if (!_style.startswith("{") && !isPredefinedStyle(_style)) {
         std::unique_ptr<llvm::MemoryBuffer> DotClangFormat = MemoryBuffer::getMemBuffer(style);
 
         createInMemoryFile(".clang-format", *DotClangFormat.get(), Sources, Files, InMemoryFileSystem.get());
