@@ -2,13 +2,13 @@
 
 # Install
 
-[![npm](https://img.shields.io/npm/v/@wasm-fmt/clang-format)](https://www.npmjs.com/package/@wasm-fmt/clang-format)
+[![npm](https://img.shields.io/npm/v/@wasm-fmt/clang-format?color=f34b7d)](https://www.npmjs.com/package/@wasm-fmt/clang-format)
 
 ```bash
 npm install @wasm-fmt/clang-format
 ```
 
-[![jsr.io](https://jsr.io/badges/@fmt/clang-format?color=3572A5)](https://jsr.io/@fmt/clang-format)
+[![jsr.io](https://jsr.io/badges/@fmt/clang-format?color=f34b7d)](https://jsr.io/@fmt/clang-format)
 
 ```bash
 npx jsr add @fmt/clang-format
@@ -17,7 +17,7 @@ npx jsr add @fmt/clang-format
 # Usage
 
 ```JavaScript
-import init, { format } from '@wasm-fmt/clang-format';
+import init, { format } from "@wasm-fmt/clang-format";
 
 await init();
 
@@ -29,18 +29,33 @@ std::cout << "Hello World!" << std::endl;
 return 0;}
 `;
 
+// JSON/YAML representation of Clang-Format Style Options
+const config = JSON.stringify({
+  BasedOnStyle: "Chromium",
+  IndentWidth: 4,
+  ColumnLimit: 80,
+});
+
+// or
+const config2 = `---
+BasedOnStyle: Chromium
+IndentWidth: 4
+ColumnLimit: 80
+
+...
+`;
+
 const formatted = format(
     source,
     "main.cc",
-    JSON.stringify({
-        BasedOnStyle: "Chromium",
-        IndentWidth: 4,
-        ColumnLimit: 80,
-    })
+    config,
 );
 
 console.log(formatted);
 ```
+
+The third argument of `format` accepts either a JSON or YAML representation of Clang-Format Style Options.
+See [Clang-Format Style Options](https://clang.llvm.org/docs/ClangFormatStyleOptions.html) for more information.
 
 # Build from source
 
