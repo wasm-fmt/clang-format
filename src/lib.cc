@@ -110,7 +110,7 @@ static auto format(const std::string str, const std::string assumedFileName, con
 
     StringRef _style = style;
 
-    if (_style.startswith("---")) {
+    if (!_style.startswith("{")) {
         std::unique_ptr<llvm::MemoryBuffer> DotClangFormat = MemoryBuffer::getMemBuffer(style);
 
         createInMemoryFile(".clang-format", *DotClangFormat.get(), Sources, Files, InMemoryFileSystem.get());
