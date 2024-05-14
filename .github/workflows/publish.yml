@@ -57,6 +57,9 @@ jobs:
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+            - name: Publish to jsr.io
+              run: cd npm && npx jsr publish
+
             - name: Pack
               run: cd npm && npm pack
 
