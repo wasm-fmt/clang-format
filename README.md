@@ -1,10 +1,17 @@
 [![Test](https://github.com/wasm-fmt/clang-format/actions/workflows/test.yml/badge.svg)](https://github.com/wasm-fmt/clang-format/actions/workflows/test.yml)
-[![npm](https://img.shields.io/npm/v/@wasm-fmt/clang-format)](https://www.npmjs.com/package/@wasm-fmt/clang-format)
 
 # Install
 
+[![npm](https://img.shields.io/npm/v/@wasm-fmt/clang-format)](https://www.npmjs.com/package/@wasm-fmt/clang-format)
+
 ```bash
 npm install @wasm-fmt/clang-format
+```
+
+[![jsr.io](https://jsr.io/badges/@fmt/clang-fmt?color=3572A5)](https://jsr.io/@fmt/clang-fmt)
+
+```bash
+npx jsr add @fmt/clang-fmt
 ```
 
 # Usage
