@@ -10,11 +10,11 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "MinSizeRel")
 endif()
 
-set(LLVM_VERSION "17.0.1")
+set(LLVM_VERSION "17.0.2")
 
 FetchContent_Declare(llvm_project
     URL "https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/llvm-project-${LLVM_VERSION}.src.tar.xz"
-    URL_HASH SHA256=b0e42aafc01ece2ca2b42e3526f54bebc4b1f1dc8de6e34f46a0446a13e882b9
+    URL_HASH SHA256=351562b14d42fcefcbf00cc1f327680a1062bbbf67a1e1ca6acb64c473b06394
     TLS_VERIFY TRUE
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
