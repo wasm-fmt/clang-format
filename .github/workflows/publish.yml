@@ -63,9 +63,14 @@ jobs:
             - name: Pack
               run: cd pkg && npm pack
 
+            - name: Set version
+              id: vars
+              run: echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
             - name: Publish to Github Releases
-              uses: softprops/action-gh-release@9d7c94cfd0a1f3ed45544c887983e9fa900f0564
+              uses: softprops/action-gh-release@v2
               with:
+                  body: clang-format from [LLVM ${{ github.ref_name }}](https://github.com/llvm/llvm-project/releases/tag/llvmorg-${{steps.vars.outputs.tag}}).
                   files: |
                       pkg/*.tgz
                       pkg/*.wasm
