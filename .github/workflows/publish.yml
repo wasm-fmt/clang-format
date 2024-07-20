@@ -70,7 +70,7 @@ jobs:
             - name: Publish to Github Releases
               uses: softprops/action-gh-release@v2
               with:
-                  body: clang-format from [LLVM ${{ github.ref_name }}](https://github.com/llvm/llvm-project/releases/tag/llvmorg-${{steps.vars.outputs.tag}}).
+                  body: clang-format from [LLVM ${{ github.ref_name }}](https://github.com/llvm/llvm-project/releases/tag/llvmorg-${{steps.vars.outputs.version}}).
                   files: |
                       pkg/*.tgz
                       pkg/*.wasm
