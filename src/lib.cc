@@ -50,6 +50,19 @@ static bool ShowColors{true};
 
 static bool NoShowColors{false};
 
+struct Result {
+    bool error;
+    std::string content;
+};
+
+static auto Ok(const std::string content) -> Result {
+    return {false, content};
+}
+
+static auto Err(const std::string content) -> Result {
+    return {true, content};
+}
+
 namespace clang {
 namespace format {
 
@@ -74,33 +87,20 @@ static auto isPredefinedStyle(StringRef style) -> bool {
         .Default(false);
 }
 
-// Returns true on error.
-static auto format(const std::string str, const std::string assumedFileName, const std::string style) -> std::string {
-    ErrorOr<std::unique_ptr<MemoryBuffer>> CodeOrErr = MemoryBuffer::getMemBuffer(str);
-
-    if (std::error_code EC = CodeOrErr.getError()) {
-        std::string err = EC.message();
-        llvm::errs() << err << "\n";
-        return "\0" + err;
-    }
-    std::unique_ptr<llvm::MemoryBuffer> Code = std::move(CodeOrErr.get());
-    if (Code->getBufferSize() == 0)
-        return "";  // Empty files are formatted correctly.
-
-    StringRef BufStr = Code->getBuffer();
+static auto format_range(const std::unique_ptr<llvm::MemoryBuffer> code,
+                         const std::string assumedFileName,
+                         const std::string style,
+                         std::vector<tooling::Range> ranges) -> Result {
+    StringRef BufStr = code->getBuffer();
 
     const char* InvalidBOM = SrcMgr::ContentCache::getInvalidBOM(BufStr);
 
     if (InvalidBOM) {
         std::stringstream err;
-        err << "error: encoding with unsupported byte order mark \"" << InvalidBOM << "\" detected.";
+        err << "encoding with unsupported byte order mark \"" << InvalidBOM << "\" detected.";
 
-        llvm::errs() << err.str() << "\n";
-        return "\0" + err.str();
+        return Err(err.str());
     }
-
-    std::vector<tooling::Range> Ranges;
-    fillRanges(Code.get(), Ranges);
 
     StringRef AssumedFileName = assumedFileName;
     if (AssumedFileName.empty()) {
@@ -124,14 +124,13 @@ static auto format(const std::string str, const std::string assumedFileName, con
     }
 
     llvm::Expected<FormatStyle> FormatStyle =
-        getStyle(_style, AssumedFileName, FallbackStyle, Code->getBuffer(), InMemoryFileSystem.get(), false);
+        getStyle(_style, AssumedFileName, FallbackStyle, code->getBuffer(), InMemoryFileSystem.get(), false);
 
     InMemoryFileSystem.reset();
 
     if (!FormatStyle) {
         std::string err = llvm::toString(FormatStyle.takeError());
-        llvm::errs() << err << "\n";
-        return "\0" + err;
+        return Err(err);
     }
 
     StringRef QualifierAlignmentOrder = QualifierAlignment;
@@ -160,25 +159,115 @@ static auto format(const std::string str, const std::string assumedFileName, con
         FormatStyle->SortIncludes = FormatStyle::SI_Never;
 
     unsigned CursorPosition = Cursor;
-    Replacements Replaces = sortIncludes(*FormatStyle, Code->getBuffer(), Ranges, AssumedFileName, &CursorPosition);
+    Replacements Replaces = sortIncludes(*FormatStyle, code->getBuffer(), ranges, AssumedFileName, &CursorPosition);
 
     // To format JSON insert a variable to trick the code into thinking its
     // JavaScript.
     if (FormatStyle->isJson() && !FormatStyle->DisableFormat) {
-        auto Err = Replaces.add(tooling::Replacement(tooling::Replacement(AssumedFileName, 0, 0, "x = ")));
-        if (Err)
-            llvm::errs() << "Bad Json variable insertion\n";
+        auto err = Replaces.add(tooling::Replacement(tooling::Replacement(AssumedFileName, 0, 0, "x = ")));
+        if (err)
+            return Err("Bad Json variable insertion");
     }
 
-    auto ChangedCode = cantFail(tooling::applyAllReplacements(Code->getBuffer(), Replaces));
+    auto ChangedCode = cantFail(tooling::applyAllReplacements(code->getBuffer(), Replaces));
 
     // Get new affected ranges after sorting `#includes`.
-    Ranges = tooling::calculateRangesAfterReplacements(Replaces, Ranges);
+    ranges = tooling::calculateRangesAfterReplacements(Replaces, ranges);
     FormattingAttemptStatus Status;
-    Replacements FormatChanges = reformat(*FormatStyle, ChangedCode, Ranges, AssumedFileName, &Status);
+    Replacements FormatChanges = reformat(*FormatStyle, ChangedCode, ranges, AssumedFileName, &Status);
     Replaces = Replaces.merge(FormatChanges);
 
-    return cantFail(tooling::applyAllReplacements(Code->getBuffer(), Replaces));
+    return Ok(cantFail(tooling::applyAllReplacements(code->getBuffer(), Replaces)));
+}
+
+static auto format_range(const std::string str,
+                         const std::string assumedFileName,
+                         const std::string style,
+                         const bool is_line_range,
+                         const std::vector<unsigned> ranges) -> Result {
+    ErrorOr<std::unique_ptr<MemoryBuffer>> CodeOrErr = MemoryBuffer::getMemBuffer(str);
+
+    if (std::error_code EC = CodeOrErr.getError()) {
+        return Err(EC.message());
+    }
+    std::unique_ptr<llvm::MemoryBuffer> Code = std::move(CodeOrErr.get());
+    if (Code->getBufferSize() == 0)
+        return Ok("");  // Empty files are formatted correctly.
+
+    std::vector<tooling::Range> Ranges;
+
+    if (ranges.empty()) {
+        fillRanges(Code.get(), Ranges);
+        return format_range(std::move(Code), assumedFileName, style, std::move(Ranges));
+    }
+
+    IntrusiveRefCntPtr<llvm::vfs::InMemoryFileSystem> InMemoryFileSystem(new llvm::vfs::InMemoryFileSystem);
+    FileManager Files(FileSystemOptions(), InMemoryFileSystem);
+    DiagnosticsEngine Diagnostics(IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs), new DiagnosticOptions);
+    SourceManager Sources(Diagnostics, Files);
+    FileID ID = createInMemoryFile("<irrelevant>", *Code, Sources, Files, InMemoryFileSystem.get());
+
+    if (is_line_range) {
+        for (auto FromLine = begin(ranges); FromLine < end(ranges); FromLine += 2) {
+            auto ToLine = FromLine + 1;
+
+            SourceLocation Start = Sources.translateLineCol(ID, *FromLine, 1);
+            SourceLocation End = Sources.translateLineCol(ID, *ToLine, UINT_MAX);
+            if (Start.isInvalid() || End.isInvalid()) {
+                return Err("invalid line number");
+            }
+            unsigned Offset = Sources.getFileOffset(Start);
+            unsigned Length = Sources.getFileOffset(End) - Offset;
+            Ranges.push_back(tooling::Range(Offset, Length));
+        }
+    } else {
+        if (ranges.size() > 2 && ranges.size() % 2 != 0) {
+            return Err("number of -offset and -length arguments must match");
+        }
+
+        for (auto offset = begin(ranges); offset < end(ranges); offset += 2) {
+            auto length = offset + 1;
+
+            if (*offset >= Code->getBufferSize()) {
+                std::stringstream err;
+                err << "offset " << *offset << " is outside the file";
+                return Err(err.str());
+            }
+
+            unsigned end = *offset + *length;
+            if (end > Code->getBufferSize()) {
+                std::stringstream err;
+                err << "invalid length " << *length << ", offset + length (" << end << ") is outside the file.";
+                return Err(err.str());
+            }
+
+            SourceLocation Start = Sources.getLocForStartOfFile(ID).getLocWithOffset(*offset);
+            SourceLocation End = Start.getLocWithOffset(*length);
+
+            unsigned Offset = Sources.getFileOffset(Start);
+            unsigned Length = Sources.getFileOffset(End) - Offset;
+
+            Ranges.push_back(tooling::Range(Offset, Length));
+        }
+    }
+
+    return format_range(std::move(Code), assumedFileName, style, std::move(Ranges));
+}
+
+static auto format(const std::string str, const std::string assumedFileName, const std::string style) -> Result {
+    ErrorOr<std::unique_ptr<MemoryBuffer>> CodeOrErr = MemoryBuffer::getMemBuffer(str);
+
+    if (std::error_code EC = CodeOrErr.getError()) {
+        return Err(EC.message());
+    }
+    std::unique_ptr<llvm::MemoryBuffer> Code = std::move(CodeOrErr.get());
+    if (Code->getBufferSize() == 0)
+        return Ok("");  // Empty files are formatted correctly.
+
+    std::vector<tooling::Range> Ranges;
+    fillRanges(Code.get(), Ranges);
+
+    return format_range(std::move(Code), assumedFileName, style, std::move(Ranges));
 }
 
 }  // namespace format
@@ -188,20 +277,33 @@ auto version() -> std::string {
     return clang::getClangToolFullVersion("clang-format");
 }
 
-auto format(const std::string str, const std::string assumedFileName) -> std::string {
-    return clang::format::format(str, assumedFileName, clang::format::DefaultFallbackStyle);
+static auto format_byte(const std::string str,
+                        const std::string assumedFileName,
+                        const std::string style,
+                        const std::vector<unsigned> ranges) -> Result {
+    return clang::format::format_range(str, assumedFileName, style, false, std::move(ranges));
 }
 
-auto format(const std::string str, const std::string assumedFileName, const std::string style) -> std::string {
-    return clang::format::format(str, assumedFileName, style);
+static auto format_line(const std::string str,
+                        const std::string assumedFileName,
+                        const std::string style,
+                        const std::vector<unsigned> ranges) -> Result {
+    return clang::format::format_range(str, assumedFileName, style, true, std::move(ranges));
 }
 
 using namespace emscripten;
 
 EMSCRIPTEN_BINDINGS(my_module) {
+    register_vector<unsigned>("RangeList");
+
+    value_object<Result>("Result").field("error", &Result::error).field("content", &Result::content);
+
     function<std::string>("version", &version);
-    function<std::string, const std::string, const std::string>("format", &format);
-    function<std::string, const std::string, const std::string, const std::string>("format_with_style", &format);
+    function<Result, const std::string, const std::string, const std::string>("format", &clang::format::format);
+    function<Result, const std::string, const std::string, const std::string, const std::vector<unsigned>>(
+        "format_byte", &format_byte);
+    function<Result, const std::string, const std::string, const std::string, const std::vector<unsigned>>(
+        "format_line", &format_line);
 }
 
 auto main(int argc, const char** argv) -> int {
