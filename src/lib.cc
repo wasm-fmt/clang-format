@@ -116,7 +116,7 @@ static auto format_range(const std::unique_ptr<llvm::MemoryBuffer> code,
 
     StringRef _style = style;
 
-    if (!_style.startswith("{") && !isPredefinedStyle(_style)) {
+    if (!_style.starts_with("{") && !isPredefinedStyle(_style)) {
         std::unique_ptr<llvm::MemoryBuffer> DotClangFormat = MemoryBuffer::getMemBuffer(style);
 
         createInMemoryFile(".clang-format", *DotClangFormat.get(), Sources, Files, InMemoryFileSystem.get());

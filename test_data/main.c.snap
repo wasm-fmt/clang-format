@@ -186,7 +186,7 @@ enum {
   (JS_CLASS_FLOAT64_ARRAY - JS_CLASS_UINT8C_ARRAY + 1)
 static uint8_t const typed_array_size_log2[JS_TYPED_ARRAY_COUNT];
 #define typed_array_size_log2(classid)                                         \
-  (typed_array_size_log2[(classid)-JS_CLASS_UINT8C_ARRAY])
+  (typed_array_size_log2[(classid) - JS_CLASS_UINT8C_ARRAY])
 
 typedef enum JSErrorEnum {
   JS_EVAL_ERROR,
@@ -15564,8 +15564,7 @@ static JSValue JS_CallInternal(JSContext *caller_ctx, JSValueConst func_obj,
 #define def(id, size, n_pop, n_push, f) &&case_default,
 #endif
 #include "quickjs-opcode.h"
-    [OP_COUNT... 255] = &&case_default
-  };
+      [OP_COUNT... 255] = &&case_default};
 #define SWITCH(pc) goto *dispatch_table[opcode = *pc++];
 #define CASE(op) case_##op
 #define DEFAULT case_default
@@ -19355,8 +19354,8 @@ static void free_token(JSParseState *s, JSToken *token) {
   }
 }
 
-static void __attribute((unused))
-dump_token(JSParseState *s, const JSToken *token) {
+static void __attribute((unused)) dump_token(JSParseState *s,
+                                             const JSToken *token) {
   switch (token->val) {
   case TOK_NUMBER: {
     double d;
@@ -19405,8 +19404,8 @@ dump_token(JSParseState *s, const JSToken *token) {
   }
 }
 
-int __attribute__((format(printf, 2, 3)))
-js_parse_error(JSParseState *s, const char *fmt, ...) {
+int __attribute__((format(printf, 2, 3))) js_parse_error(JSParseState *s,
+                                                         const char *fmt, ...) {
   JSContext *ctx = s->ctx;
   va_list ap;
   int backtrace_flags;

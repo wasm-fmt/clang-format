@@ -10,11 +10,11 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "MinSizeRel")
 endif()
 
-set(LLVM_VERSION "17.0.6")
+set(LLVM_VERSION "18.1.0")
 
 FetchContent_Declare(llvm_project
     URL "https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/llvm-project-${LLVM_VERSION}.src.tar.xz"
-    URL_HASH SHA256=58a8818c60e6627064f312dbf46c02d9949956558340938b71cf731ad8bc0813
+    URL_HASH SHA256=758a048046ac5024f86c868bb17c631500eed8f8d2677ae6a72ab7ad01602277
     TLS_VERIFY TRUE
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
@@ -51,7 +51,7 @@ target_link_libraries(clang-format-wasm PRIVATE
     ${LLVM_LIBRARIES}
     "-lembind"
     "-fno-rtti"
-    "-flto"
+    # "-flto"
     "-s MINIMAL_RUNTIME=1"
     "-s DYNAMIC_EXECUTION=0"
     "-s FILESYSTEM=0"
