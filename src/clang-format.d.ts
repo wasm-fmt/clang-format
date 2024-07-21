@@ -18,7 +18,7 @@ export default function init(input?: InitInput): Promise<void>;
  *  - `Microsoft` - A style complying with Microsoft’s style guide.
  *  - `GNU` - A style complying with the GNU coding standards.
  *  - A string starting with `{`, for example: `{BasedOnStyle: Chromium, IndentWidth: 4, ...}`.
- *  - A string starting with `---`, which represents `.clang-format` content.
+ *  - A string which represents `.clang-format` content.
  *
  */
 export type Style =
@@ -65,9 +65,10 @@ export type Filename =
  *   - `Microsoft` - A style complying with Microsoft’s style guide.
  *   - `GNU` - A style complying with the GNU coding standards.
  *   - A string starting with `{`, for example: `{BasedOnStyle: Chromium, IndentWidth: 4, ...}`.
- *   - A string starting with `---`, which represents `.clang-format` content.
+ *   - A string which represents `.clang-format` content.
  *
  * @returns {string} The formatted content.
+ * @throws {Error}
  *
  * @see {@link https://clang.llvm.org/docs/ClangFormatStyleOptions.html}
  */
@@ -77,7 +78,15 @@ export declare function format(
     style?: Style,
 ): string;
 
+
+/**
+ * Both the startLine and endLine are 1-based.
+ */
 export type LineRange = [startLine: number, endLine: number];
+
+/**
+ * Both the offset and length are measured in bytes.
+ */
 export type ByteRange = [offset: number, length: number];
 
 /**
@@ -99,9 +108,10 @@ export type ByteRange = [offset: number, length: number];
  *   - `Microsoft` - A style complying with Microsoft’s style guide.
  *   - `GNU` - A style complying with the GNU coding standards.
  *   - A string starting with `{`, for example: `{BasedOnStyle: Chromium, IndentWidth: 4, ...}`.
- *   - A string starting with `---`, which represents `.clang-format` content.
+ *   - A string which represents `.clang-format` content.
  *
  * @returns {string} The formatted content.
+ * @throws {Error}
  *
  * @see {@link https://clang.llvm.org/docs/ClangFormatStyleOptions.html}
  */
@@ -128,9 +138,10 @@ export declare function formatLineRange(
  *   - `Microsoft` - A style complying with Microsoft’s style guide.
  *   - `GNU` - A style complying with the GNU coding standards.
  *   - A string starting with `{`, for example: `{BasedOnStyle: Chromium, IndentWidth: 4, ...}`.
- *   - A string starting with `---`, which represents `.clang-format` content.
+ *   - A string which represents `.clang-format` content.
  *
  * @returns {string} The formatted content.
+ * @throws {Error}
  *
  * @see {@link https://clang.llvm.org/docs/ClangFormatStyleOptions.html}
  */
