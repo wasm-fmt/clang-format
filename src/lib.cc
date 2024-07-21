@@ -56,11 +56,11 @@ struct Result {
 };
 
 static auto Ok(const std::string content) -> Result {
-    return {false, content};
+    return {false, std::move(content)};
 }
 
 static auto Err(const std::string content) -> Result {
-    return {true, content};
+    return {true, std::move(content)};
 }
 
 namespace clang {
