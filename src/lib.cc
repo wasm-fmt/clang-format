@@ -27,8 +27,6 @@ static std::string Style{clang::format::DefaultFormatStyle};
 
 static std::string FallbackStyle{clang::format::DefaultFallbackStyle};
 
-static std::string AssumeFileName{"<stdin>"};
-
 static unsigned Cursor{0};
 
 static bool SortIncludes{false};
@@ -36,19 +34,6 @@ static bool SortIncludes{false};
 static std::string QualifierAlignment{""};
 
 static std::string Files{""};
-
-// Emulate being able to turn on/off the warning.
-static bool WarnFormat{true};
-
-static bool NoWarnFormat{};
-
-static unsigned ErrorLimit{0};
-
-static bool WarningsAsErrors{};
-
-static bool ShowColors{true};
-
-static bool NoShowColors{false};
 
 struct Result {
     bool error;
