@@ -103,15 +103,20 @@ export function format_byte_range(
 ) {
     assert_init();
     const rangeList = new wasm.RangeList();
-    for (const [offset, length] of range) {
-        if (offset < 0) {
-            throw Error("start offset should be at least 0");
+
+    if (range.length === 1 && range[0].length === 1) {
+        rangeList.push_back(range[0][0]);
+    } else {
+        for (const [offset, length] of range) {
+            if (offset < 0) {
+                throw Error("start offset should be at least 0");
+            }
+            if (length < 0) {
+                throw Error("length should be at least 0");
+            }
+            rangeList.push_back(offset);
+            rangeList.push_back(length);
         }
-        if (length < 0) {
-            throw Error("length should be at least 0");
-        }
-        rangeList.push_back(offset);
-        rangeList.push_back(length);
     }
 
     const result = wasm.format_byte(content, filename, style, rangeList);

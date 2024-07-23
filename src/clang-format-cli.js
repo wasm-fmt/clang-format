@@ -79,11 +79,11 @@ for (const token of tokens) {
 
 let fileNames = positionals;
 if (values.files) {
-    const ExternalFileOfFiles = await readFile(values.files, {
+    const external_file_of_files = await readFile(values.files, {
         encoding: "utf-8",
     });
     fileNames = fileNames.concat(
-        ExternalFileOfFiles.split("\n").filter(Boolean),
+        external_file_of_files.split("\n").filter(Boolean),
     );
 }
 
@@ -140,25 +140,46 @@ if (!empty(values.lines)) {
     process.exit(0);
 }
 
-if (values.offset.length !== values.length.length) {
-    console.error("error: number of -offset and -length arguments must match");
-    process.exit(1);
-}
 
-if (!empty(values.offset)) {
-    const [file] = fileNames;
-    const content = await get_file_or_stdin(file);
-
+format_range: {
     const range = [];
-    for (let i = 0; i < values.offset.length; ++i) {
-        const offset = Number.parseInt(values.offset[i], 10);
-        const length = Number.parseInt(values.length[i], 10);
-        if (!Number.isFinite(offset) || !Number.isFinite(length)) {
-            console.error("error: invalid <offset>:<length> pair");
+
+    fill_range: {
+        if (values.offset.length === 1 && values.length.length === 0) {
+            const offset = expect_number(values.offset[0], "offset");
+            range.push([offset]);
+            break fill_range;
+        }
+
+        if (values.offset.length !== values.length.length) {
+            console.error(
+                "error: number of -offset and -length arguments must match",
+            );
             process.exit(1);
         }
-        range.push([offset, length]);
+
+        for (let i = 0; i < values.offset.length; ++i) {
+            const offset = expect_number(values.offset[i], "offset");
+            const length = expect_number(values.length[i], "length");
+            range.push([offset, length]);
+        }
+
+        function expect_number(value, name) {
+            const num = Number.parseInt(value, 10);
+            if (!Number.isFinite(num)) {
+                console.error(`error: invalid ${name}`);
+                process.exit(1);
+            }
+            return num;
+        }
     }
+
+    if (empty(range)) {
+        break format_range;
+    }
+
+    const [file] = fileNames;
+    const content = await get_file_or_stdin(file);
 
     const formatted = format_byte_range(content, range, file, values.style);
 

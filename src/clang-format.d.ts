@@ -116,7 +116,7 @@ export type ByteRange = [offset: number, length: number];
  */
 export declare function format_line_range(
     content: string,
-    range: ByteRange[],
+    range: ByteRange[] | [[offset: number]],
     filename?: Filename,
     style?: Style,
 ): string;
@@ -126,7 +126,7 @@ export declare function format_line_range(
  */
 export declare function formatLineRange(
     content: string,
-    range: ByteRange[],
+    range: ByteRange[] | [[offset: number]],
     filename?: Filename,
     style?: Style,
 ): string;

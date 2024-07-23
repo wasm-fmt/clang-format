@@ -206,29 +206,45 @@ static auto format_range(const std::string str,
             return Err("number of -offset and -length arguments must match");
         }
 
-        for (auto offset = begin(ranges); offset < end(ranges); offset += 2) {
-            auto length = offset + 1;
-
+        if (ranges.size() == 1) {
+            auto offset = begin(ranges);
             if (*offset >= Code->getBufferSize()) {
                 std::stringstream err;
                 err << "offset " << *offset << " is outside the file";
                 return Err(err.str());
             }
-
-            unsigned end = *offset + *length;
-            if (end > Code->getBufferSize()) {
-                std::stringstream err;
-                err << "invalid length " << *length << ", offset + length (" << end << ") is outside the file.";
-                return Err(err.str());
-            }
-
             SourceLocation Start = Sources.getLocForStartOfFile(ID).getLocWithOffset(*offset);
-            SourceLocation End = Start.getLocWithOffset(*length);
+            SourceLocation End = Sources.getLocForEndOfFile(ID);
 
             unsigned Offset = Sources.getFileOffset(Start);
             unsigned Length = Sources.getFileOffset(End) - Offset;
 
             Ranges.push_back(tooling::Range(Offset, Length));
+        } else {
+            for (auto offset = begin(ranges); offset < end(ranges); offset += 2) {
+                auto length = offset + 1;
+
+                if (*offset >= Code->getBufferSize()) {
+                    std::stringstream err;
+                    err << "offset " << *offset << " is outside the file";
+                    return Err(err.str());
+                }
+
+                unsigned end = *offset + *length;
+                if (end > Code->getBufferSize()) {
+                    std::stringstream err;
+                    err << "invalid length " << *length << ", offset + length (" << end << ") is outside the file.";
+                    return Err(err.str());
+                }
+
+                SourceLocation Start = Sources.getLocForStartOfFile(ID).getLocWithOffset(*offset);
+                SourceLocation End = Start.getLocWithOffset(*length);
+
+                unsigned Offset = Sources.getFileOffset(Start);
+                unsigned Length = Sources.getFileOffset(End) - Offset;
+
+                Ranges.push_back(tooling::Range(Offset, Length));
+            }
         }
     }
 
