@@ -78,7 +78,6 @@ export declare function format(
     style?: Style,
 ): string;
 
-
 /**
  * Both the startLine and endLine are 1-based.
  */
@@ -115,6 +114,16 @@ export type ByteRange = [offset: number, length: number];
  *
  * @see {@link https://clang.llvm.org/docs/ClangFormatStyleOptions.html}
  */
+export declare function format_line_range(
+    content: string,
+    range: ByteRange[],
+    filename?: Filename,
+    style?: Style,
+): string;
+
+/**
+ * @deprecated Use `format_line_range` instead.
+ */
 export declare function formatLineRange(
     content: string,
     range: ByteRange[],
@@ -144,6 +153,16 @@ export declare function formatLineRange(
  * @throws {Error}
  *
  * @see {@link https://clang.llvm.org/docs/ClangFormatStyleOptions.html}
+ */
+export declare function format_byte_range(
+    content: string,
+    range: LineRange[],
+    filename?: Filename,
+    style?: Style,
+): string;
+
+/**
+ * @deprecated Use `format_byte_range` instead.
  */
 export declare function formatByteRange(
     content: string,

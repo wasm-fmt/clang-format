@@ -23,8 +23,6 @@
 using namespace llvm;
 using clang::tooling::Replacements;
 
-static std::string Style{clang::format::DefaultFormatStyle};
-
 static std::string FallbackStyle{clang::format::DefaultFallbackStyle};
 
 static unsigned Cursor{0};
@@ -32,8 +30,6 @@ static unsigned Cursor{0};
 static bool SortIncludes{false};
 
 static std::string QualifierAlignment{""};
-
-static std::string Files{""};
 
 struct Result {
     bool error;

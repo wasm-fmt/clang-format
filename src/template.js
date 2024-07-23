@@ -41,30 +41,15 @@ export default async function initAsync(input) {
 
     wasm = await load(await input).then((wasm) => Module({ wasm }));
     version = wasm.version;
-    format_with_style = wasm.format;
-    format_line_range = wasm.format_line;
-    format_byte_range = wasm.format_byte;
-    RangeList = wasm.RangeList;
+    assert_init = () => {};
 }
 
-function format_with_style() {
-    throw Error("uninit");
-}
-
-function format_line_range() {
-    throw Error("uninit");
-}
-
-function format_byte_range() {
-    throw Error("uninit");
-}
-
-function RangeList() {
-    throw Error("uninit");
+function assert_init() {
+    throw new Error("uninit");
 }
 
 export function version() {
-    throw Error("uninit");
+    assert_init();
 }
 
 function unwrap(result) {
@@ -76,17 +61,19 @@ function unwrap(result) {
 }
 
 export function format(content, filename = "<stdin>", style = "LLVM") {
-    const result = format_with_style(content, filename, style);
+    assert_init();
+    const result = wasm.format(content, filename, style);
     return unwrap(result);
 }
 
-export function formatLineRange(
+export function format_line_range(
     content,
     range,
     filename = "<stdin>",
     style = "LLVM",
 ) {
-    const rangeList = new RangeList();
+    assert_init();
+    const rangeList = new wasm.RangeList();
     for (const [fromLine, toLine] of range) {
         if (fromLine < 1) {
             throw Error("start line should be at least 1");
@@ -98,18 +85,19 @@ export function formatLineRange(
         rangeList.push_back(toLine);
     }
 
-    const result = format_line_range(content, filename, style, rangeList);
+    const result = wasm.format_line(content, filename, style, rangeList);
     rangeList.delete();
     return unwrap(result);
 }
 
-export function formatByteRange(
+export function format_byte_range(
     content,
     range,
     filename = "<stdin>",
     style = "LLVM",
 ) {
-    const rangeList = new RangeList();
+    assert_init();
+    const rangeList = new wasm.RangeList();
     for (const [offset, length] of range) {
         if (offset < 0) {
             throw Error("start offset should be at least 0");
@@ -121,7 +109,12 @@ export function formatByteRange(
         rangeList.push_back(length);
     }
 
-    const result = format_byte_range(content, filename, style, rangeList);
+    const result = wasm.format_byte(content, filename, style, rangeList);
     rangeList.delete();
     return unwrap(result);
 }
+
+export {
+    format_byte_range as formatByteRange,
+    format_line_range as formatLineRange,
+};
