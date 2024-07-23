@@ -52,6 +52,11 @@ export function version() {
     assert_init();
 }
 
+export function set_fallback_style(style) {
+    assert_init();
+    wasm.set_fallback_style(style);
+}
+
 function unwrap(result) {
     const { error, content } = result;
     if (error) {

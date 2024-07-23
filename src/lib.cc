@@ -272,6 +272,10 @@ static auto format_line(const std::string str,
     return clang::format::format_range(str, assumedFileName, style, true, std::move(ranges));
 }
 
+static auto set_fallback_style(const std::string style) -> void {
+    FallbackStyle = style;
+}
+
 using namespace emscripten;
 
 EMSCRIPTEN_BINDINGS(my_module) {
@@ -285,6 +289,7 @@ EMSCRIPTEN_BINDINGS(my_module) {
         "format_byte", &format_byte);
     function<Result, const std::string, const std::string, const std::string, const std::vector<unsigned>>(
         "format_line", &format_line);
+    function<void, const std::string>("set_fallback_style", &set_fallback_style);
 }
 
 auto main(int argc, const char** argv) -> int {

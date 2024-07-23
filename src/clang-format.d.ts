@@ -172,3 +172,5 @@ export declare function formatByteRange(
 ): string;
 
 export declare function version(): string;
+
+export declare function set_fallback_style(style: Style): void;
