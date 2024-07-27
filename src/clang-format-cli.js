@@ -1,6 +1,7 @@
 #! /usr/bin/env node
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
+import path from "node:path";
 import { parseArgs } from "node:util";
 import init, {
     format,
@@ -43,14 +44,17 @@ const { values, positionals, tokens } = parseArgs({
         length: {
             type: "string",
             multiple: true,
+            default: [],
         },
         lines: {
             type: "string",
             multiple: true,
+            default: [],
         },
         offset: {
             type: "string",
             multiple: true,
+            default: [],
         },
         style: {
             type: "string",
@@ -95,6 +99,68 @@ if (values["fallback-style"]) {
     set_fallback_style(values["fallback-style"]);
 }
 
+let style = values.style || "file";
+
+if (style.startsWith("file:")) {
+    const file = values.style.slice(5);
+    style = await readFile(file, { encoding: "utf-8" });
+}
+
+function get_style(filename) {
+    if (style === "file") {
+        return load_style(filename);
+    }
+
+    return style;
+}
+
+const loaded_style = ["file"];
+const style_map = new Map();
+
+function load_style(filename) {
+    if (filename === "-") {
+        filename = ".";
+    }
+    let parent_path = path.resolve(filename, "..");
+    let config_path = path.join(parent_path, ".clang-format");
+
+    if (style_map.has(config_path)) {
+        const index = style_map.get(config_path);
+        return loaded_style[index];
+    }
+
+    const stack = [config_path];
+    while (true) {
+        if (style_map.has(config_path)) {
+            const index = style_map.get(config_path);
+            stack.forEach((s) => {
+                style_map.set(s, index);
+            });
+            return loaded_style[index];
+        }
+
+        stack.push(config_path);
+        if (existsSync(config_path)) {
+            const style = readFileSync(config_path, { encoding: "utf-8" });
+            const index = loaded_style.push(style) - 1;
+            stack.forEach((s) => {
+                style_map.set(s, index);
+            });
+            return style;
+        }
+
+        let new_parent_path = path.resolve(parent_path, "..");
+        if (new_parent_path === parent_path) {
+            stack.forEach((s) => {
+                style_map.set(s, 0);
+            });
+            return loaded_style[0];
+        }
+        parent_path = new_parent_path;
+        config_path = path.join(parent_path, ".clang-format");
+    }
+}
+
 if (
     fileNames.length !== 1 &&
     (!empty(values.offset) || !empty(values.length) || !empty(values.lines))
@@ -128,7 +194,7 @@ if (!empty(values.lines)) {
         range.push([from_line, to_line]);
     }
 
-    const formatted = format_line_range(content, range, file, values.style);
+    const formatted = format_line_range(content, range, file, get_style(file));
 
     if (values.inplace) {
         if (content !== formatted) {
@@ -139,7 +205,6 @@ if (!empty(values.lines)) {
     }
     process.exit(0);
 }
-
 
 format_range: {
     const range = [];
@@ -181,7 +246,7 @@ format_range: {
     const [file] = fileNames;
     const content = await get_file_or_stdin(file);
 
-    const formatted = format_byte_range(content, range, file, values.style);
+    const formatted = format_byte_range(content, range, file, get_style(file));
 
     if (values.inplace) {
         if (content !== formatted) {
@@ -196,8 +261,7 @@ format_range: {
 
 for (const file of fileNames) {
     const content = await get_file_or_stdin(file);
-    // TODO: search .clang-format on disk if values.style is not set
-    const formatted = format(content, file, values.style);
+    const formatted = format(content, file, get_style(file));
     if (values.inplace) {
         if (content !== formatted) {
             await writeFile(file, formatted, { encoding: "utf-8" });
