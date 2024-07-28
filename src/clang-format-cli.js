@@ -65,6 +65,9 @@ const { values, positionals, tokens } = parseArgs({
         version: {
             type: "boolean",
         },
+        verbose: {
+            type: "boolean",
+        }
     },
 });
 
@@ -259,7 +262,10 @@ format_range: {
     process.exit(0);
 }
 
-for (const file of fileNames) {
+for (const [file_no, file] of fileNames.entries()) {
+    if (values.verbose) {
+        console.error(`Formatting [${file_no + 1}/${fileNames.length}] ${file}`);
+    }
     const content = await get_file_or_stdin(file);
     const formatted = format(content, file, get_style(file));
     if (values.inplace) {
