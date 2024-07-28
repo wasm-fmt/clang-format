@@ -72,7 +72,7 @@ const { values, positionals, tokens } = parseArgs({
 });
 
 for (const token of tokens) {
-    switch (token.type) {
+    switch (token.name) {
         case "help": {
             console.log(help);
             process.exit(0);
