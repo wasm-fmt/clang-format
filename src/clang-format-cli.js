@@ -1,4 +1,4 @@
-#! /usr/bin/env node
+#!/usr/bin/env node
 import { existsSync, readFileSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -67,7 +67,7 @@ const { values, positionals, tokens } = parseArgs({
         },
         verbose: {
             type: "boolean",
-        }
+        },
     },
 });
 
@@ -264,7 +264,9 @@ format_range: {
 
 for (const [file_no, file] of fileNames.entries()) {
     if (values.verbose) {
-        console.error(`Formatting [${file_no + 1}/${fileNames.length}] ${file}`);
+        console.error(
+            `Formatting [${file_no + 1}/${fileNames.length}] ${file}`,
+        );
     }
     const content = await get_file_or_stdin(file);
     const formatted = format(content, file, get_style(file));
