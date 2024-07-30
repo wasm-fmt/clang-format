@@ -38,7 +38,7 @@ set(LLVM_LIBRARIES
 )
 
 project(clang-format-wasm)
-add_executable(clang-format-wasm src/lib.cc)
+add_executable(clang-format-wasm src/lib.cc src/binding.cc)
 
 target_include_directories(clang-format-wasm PRIVATE ${LLVM_INCLUDE_DIRS})
 target_compile_features(clang-format-wasm PRIVATE cxx_std_17)

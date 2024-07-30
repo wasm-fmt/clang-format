@@ -12,8 +12,7 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include <emscripten/bind.h>
-#include <sstream>
+#include "lib.h"
 #include "clang/Basic/FileManager.h"
 #include "clang/Basic/SourceManager.h"
 #include "clang/Basic/Version.h"
@@ -30,11 +29,6 @@ static unsigned Cursor{0};
 static bool SortIncludes{false};
 
 static std::string QualifierAlignment{""};
-
-struct Result {
-    bool error;
-    std::string content;
-};
 
 static auto Ok(const std::string content) -> Result {
     return {false, std::move(content)};
@@ -274,40 +268,24 @@ auto version() -> std::string {
     return clang::getClangToolFullVersion("clang-format");
 }
 
-static auto format_byte(const std::string str,
-                        const std::string assumedFileName,
-                        const std::string style,
-                        const std::vector<unsigned> ranges) -> Result {
+auto format(const std::string str, const std::string assumedFileName, const std::string style) -> Result {
+    return clang::format::format(str, assumedFileName, style);
+}
+
+auto format_byte(const std::string str,
+                 const std::string assumedFileName,
+                 const std::string style,
+                 const std::vector<unsigned> ranges) -> Result {
     return clang::format::format_range(str, assumedFileName, style, false, std::move(ranges));
 }
 
-static auto format_line(const std::string str,
-                        const std::string assumedFileName,
-                        const std::string style,
-                        const std::vector<unsigned> ranges) -> Result {
+auto format_line(const std::string str,
+                 const std::string assumedFileName,
+                 const std::string style,
+                 const std::vector<unsigned> ranges) -> Result {
     return clang::format::format_range(str, assumedFileName, style, true, std::move(ranges));
 }
 
-static auto set_fallback_style(const std::string style) -> void {
+auto set_fallback_style(const std::string style) -> void {
     FallbackStyle = style;
-}
-
-using namespace emscripten;
-
-EMSCRIPTEN_BINDINGS(my_module) {
-    register_vector<unsigned>("RangeList");
-
-    value_object<Result>("Result").field("error", &Result::error).field("content", &Result::content);
-
-    function<std::string>("version", &version);
-    function<Result, const std::string, const std::string, const std::string>("format", &clang::format::format);
-    function<Result, const std::string, const std::string, const std::string, const std::vector<unsigned>>(
-        "format_byte", &format_byte);
-    function<Result, const std::string, const std::string, const std::string, const std::vector<unsigned>>(
-        "format_line", &format_line);
-    function<void, const std::string>("set_fallback_style", &set_fallback_style);
-}
-
-auto main(int argc, const char** argv) -> int {
-    return 0;
 }
