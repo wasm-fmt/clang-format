@@ -204,7 +204,7 @@ if (!empty(values.lines)) {
             await writeFile(file, formatted, { encoding: "utf-8" });
         }
     } else {
-        console.log(formatted);
+        process.stdout.write(formatted);
     }
     process.exit(0);
 }
@@ -256,7 +256,7 @@ format_range: {
             await writeFile(file, formatted, { encoding: "utf-8" });
         }
     } else {
-        console.log(formatted);
+        process.stdout.write(formatted);
     }
 
     process.exit(0);
@@ -275,7 +275,7 @@ for (const [file_no, file] of fileNames.entries()) {
             await writeFile(file, formatted, { encoding: "utf-8" });
         }
     } else {
-        console.log(formatted);
+        process.stdout.write(formatted);
     }
 }
 
