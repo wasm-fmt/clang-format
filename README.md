@@ -16,6 +16,13 @@ npx jsr add @fmt/clang-format
 
 # Usage
 
+## CLI
+
+This repository contains two executable files, namely clang-format and git-clang-format.
+For more information, please refer to https://clang.llvm.org/docs/ClangFormat.html
+
+## API
+
 ```JavaScript
 import init, { format } from "@wasm-fmt/clang-format";
 
