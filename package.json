@@ -12,7 +12,8 @@
     },
     "bin": {
         "clang-format": "./clang-format-cli.js",
-        "git-clang-format": "./git-clang-format"
+        "git-clang-format": "./git-clang-format",
+        "clang-format-diff": "./clang-format-diff.py"
     },
     "exports": {
         ".": {
