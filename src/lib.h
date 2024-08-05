@@ -18,5 +18,7 @@ auto format_line(const std::string str,
                  const std::string style,
                  const std::vector<unsigned> ranges) -> Result;
 auto set_fallback_style(const std::string style) -> void;
+auto set_sort_includes(const bool sort) -> void;
+auto dump_config(const std::string style, const std::string FileName, const std::string code) -> Result;
 
 #endif

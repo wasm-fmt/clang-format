@@ -4,10 +4,12 @@ import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import init, {
+    dump_config,
     format,
     format_byte_range,
     format_line_range,
     set_fallback_style,
+    set_sort_includes,
     version,
 } from "./clang-format-node.js";
 
@@ -31,41 +33,47 @@ const { values, positionals, tokens } = parseArgs({
         "assume-filename": {
             type: "string",
         },
+        "dump-config": {
+            type: "boolean",
+        },
         "fallback-style": {
             type: "string",
         },
         files: {
             type: "string",
         },
-        inplace: {
+        help: {
             type: "boolean",
+        },
+        inplace: {
             short: "i",
+            type: "boolean",
         },
         length: {
-            type: "string",
-            multiple: true,
             default: [],
+            multiple: true,
+            type: "string",
         },
         lines: {
-            type: "string",
-            multiple: true,
             default: [],
+            multiple: true,
+            type: "string",
         },
         offset: {
-            type: "string",
-            multiple: true,
             default: [],
+            multiple: true,
+            type: "string",
+        },
+        "sort-includes": {
+            type: "boolean",
         },
         style: {
             type: "string",
         },
-        help: {
+        verbose: {
             type: "boolean",
         },
         version: {
-            type: "boolean",
-        },
-        verbose: {
             type: "boolean",
         },
     },
@@ -94,12 +102,16 @@ if (values.files) {
     );
 }
 
-if (fileNames.length === 0) {
+if (fileNames.length === 0 && !values["dump-config"]) {
     fileNames = ["-"];
 }
 
 if (values["fallback-style"]) {
     set_fallback_style(values["fallback-style"]);
+}
+
+if (values["sort-includes"]) {
+    set_sort_includes(true);
 }
 
 let style = values.style || "file";
@@ -164,6 +176,23 @@ function load_style(filename) {
     }
 }
 
+if (values["dump-config"]) {
+    const style = values.style || "file";
+    let code = "";
+    if (fileNames[0]) {
+        code = await get_file_or_stdin(fileNames[0]);
+    }
+
+    process.stdout.write(
+        dump_config({
+            style,
+            filename: get_file_name(fileNames[0] || "-"),
+            code,
+        }),
+    );
+    process.exit(0);
+}
+
 if (
     fileNames.length !== 1 &&
     (!empty(values.offset) || !empty(values.length) || !empty(values.lines))
@@ -197,7 +226,12 @@ if (!empty(values.lines)) {
         range.push([from_line, to_line]);
     }
 
-    const formatted = format_line_range(content, range, file, get_style(file));
+    const formatted = format_line_range(
+        content,
+        range,
+        get_file_name(file),
+        get_style(file),
+    );
 
     if (values.inplace) {
         if (content !== formatted) {
@@ -249,7 +283,12 @@ format_range: {
     const [file] = fileNames;
     const content = await get_file_or_stdin(file);
 
-    const formatted = format_byte_range(content, range, file, get_style(file));
+    const formatted = format_byte_range(
+        content,
+        range,
+        get_file_name(file),
+        get_style(file),
+    );
 
     if (values.inplace) {
         if (content !== formatted) {
@@ -269,7 +308,7 @@ for (const [file_no, file] of fileNames.entries()) {
         );
     }
     const content = await get_file_or_stdin(file);
-    const formatted = format(content, file, get_style(file));
+    const formatted = format(content, get_file_name(file), get_style(file));
     if (values.inplace) {
         if (content !== formatted) {
             await writeFile(file, formatted, { encoding: "utf-8" });
@@ -292,4 +331,11 @@ async function get_file_or_stdin(fileName) {
         return readFileSync(0, { encoding: "utf-8" });
     }
     return await readFile(fileName, { encoding: "utf-8" });
+}
+
+function get_file_name(fileName) {
+    if (fileName === "-") {
+        return values.assume_filename || "<stdin>";
+    }
+    return fileName;
 }

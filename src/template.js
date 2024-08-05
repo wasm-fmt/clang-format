@@ -40,7 +40,6 @@ export default async function initAsync(input) {
     }
 
     wasm = await load(await input).then((wasm) => Module({ wasm }));
-    version = wasm.version;
     assert_init = () => {};
 }
 
@@ -50,11 +49,17 @@ function assert_init() {
 
 export function version() {
     assert_init();
+    return wasm.version();
 }
 
 export function set_fallback_style(style) {
     assert_init();
     wasm.set_fallback_style(style);
+}
+
+export function set_sort_includes(sort) {
+    assert_init();
+    wasm.set_sort_includes(sort);
 }
 
 function unwrap(result) {
@@ -121,6 +126,16 @@ export function format_byte_range(
 
     const result = wasm.format_byte(content, filename, style, rangeList);
     rangeList.delete();
+    return unwrap(result);
+}
+
+export function dump_config({
+    style = "file",
+    filename = "<stdin>",
+    code = "",
+} = {}) {
+    assert_init();
+    const result = wasm.dump_config(style, filename, code);
     return unwrap(result);
 }
 

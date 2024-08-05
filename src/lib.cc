@@ -289,3 +289,17 @@ auto format_line(const std::string str,
 auto set_fallback_style(const std::string style) -> void {
     FallbackStyle = style;
 }
+
+auto set_sort_includes(const bool sort) -> void {
+    SortIncludes = sort;
+}
+
+auto dump_config(const std::string style, const std::string FileName, const std::string code) -> Result {
+    llvm::Expected<clang::format::FormatStyle> FormatStyle =
+        clang::format::getStyle(style, FileName, FallbackStyle, code);
+    if (!FormatStyle) {
+        return Err(llvm::toString(FormatStyle.takeError()));
+    }
+    std::string Config = clang::format::configurationAsText(*FormatStyle);
+    return Ok(Config);
+}

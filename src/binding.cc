@@ -15,6 +15,8 @@ EMSCRIPTEN_BINDINGS(my_module) {
     function<Result, const std::string, const std::string, const std::string, const std::vector<unsigned>>(
         "format_line", &format_line);
     function<void, const std::string>("set_fallback_style", &set_fallback_style);
+    function<void, bool>("set_sort_includes", &set_sort_includes);
+    function<Result, const std::string, const std::string, const std::string>("dump_config", &dump_config);
 }
 
 auto main(int argc, const char** argv) -> int {
