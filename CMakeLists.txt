@@ -6,6 +6,14 @@ include(FetchContent)
 
 set(LLVM_ENABLE_PROJECTS clang CACHE STRING "")
 
+set(LLVM_INCLUDE_UTILS OFF)
+set(LLVM_INCLUDE_EXAMPLES OFF)
+set(LLVM_INCLUDE_TESTS OFF)
+set(LLVM_INCLUDE_BENCHMARKS OFF)
+
+set(NO_RTTI "-fno-rtti")
+add_definitions(${NO_RTTI})
+
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "MinSizeRel")
 endif()
@@ -38,20 +46,22 @@ set(LLVM_LIBRARIES
 )
 
 project(clang-format-wasm)
-add_executable(clang-format-wasm src/lib.cc src/binding.cc)
 
-target_include_directories(clang-format-wasm PRIVATE ${LLVM_INCLUDE_DIRS})
-target_compile_features(clang-format-wasm PRIVATE cxx_std_17)
-target_compile_options(clang-format-wasm PRIVATE
+add_custom_target(clang-format-wasm)
+add_dependencies(clang-format-wasm clang-format-esm clang-format-cli)
+
+add_executable(clang-format-esm src/lib.cc src/binding.cc)
+target_include_directories(clang-format-esm PRIVATE ${LLVM_INCLUDE_DIRS})
+target_compile_features(clang-format-esm PRIVATE cxx_std_17)
+target_compile_options(clang-format-esm PRIVATE
     -Os
     -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0
 )
 
-target_link_libraries(clang-format-wasm PRIVATE
+target_link_libraries(clang-format-esm PRIVATE
     ${LLVM_LIBRARIES}
     "-lembind"
     "-fno-rtti"
-    # "-flto"
     "-s MINIMAL_RUNTIME=1"
     "-s DYNAMIC_EXECUTION=0"
     "-s FILESYSTEM=0"
@@ -60,4 +70,24 @@ target_link_libraries(clang-format-wasm PRIVATE
     "-s IMPORTED_MEMORY=1"
     "-s ALLOW_MEMORY_GROWTH=1"
     "-s MINIMAL_RUNTIME_STREAMING_WASM_COMPILATION=1"
+)
+
+add_executable(clang-format-cli
+    ${llvm_project_SOURCE_DIR}/clang/tools/clang-format/ClangFormat.cpp
+)
+target_include_directories(clang-format-cli PRIVATE ${LLVM_INCLUDE_DIRS})
+target_compile_features(clang-format-cli PRIVATE cxx_std_17)
+target_compile_options(clang-format-cli PRIVATE
+    -Os
+    -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0
+)
+
+target_link_libraries(clang-format-cli PRIVATE
+    ${LLVM_LIBRARIES}
+    "-fno-rtti"
+    "-lnodefs.js"
+    "-s DYNAMIC_EXECUTION=0"
+    "-s ENVIRONMENT=node"
+    "-s NODERAWFS=1"
+    "-s ALLOW_MEMORY_GROWTH=1"
 )

@@ -11,7 +11,7 @@
         "url": "git+https://github.com/wasm-fmt/clang-format.git"
     },
     "bin": {
-        "clang-format": "./clang-format-cli.js",
+        "clang-format": "./clang-format-cli.cjs",
         "git-clang-format": "./git-clang-format",
         "clang-format-diff": "./clang-format-diff.py"
     },

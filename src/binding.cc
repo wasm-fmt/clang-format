@@ -19,6 +19,4 @@ EMSCRIPTEN_BINDINGS(my_module) {
     function<Result, const std::string, const std::string, const std::string>("dump_config", &dump_config);
 }
 
-auto main(int argc, const char** argv) -> int {
-    return 0;
-}
+int main(void) {}
