@@ -4,14 +4,14 @@ message(STATUS "Using toolchain file: ${CMAKE_TOOLCHAIN_FILE}")
 
 include(FetchContent)
 
-set(LLVM_ENABLE_PROJECTS clang CACHE STRING "")
+set(LLVM_ENABLE_PROJECTS clang CACHE STRING "LLVM projects to build")
 
-set(LLVM_INCLUDE_UTILS OFF)
-set(LLVM_INCLUDE_EXAMPLES OFF)
-set(LLVM_INCLUDE_TESTS OFF)
-set(LLVM_INCLUDE_BENCHMARKS OFF)
+set(LLVM_INCLUDE_UTILS OFF CACHE BOOL "Include LLVM utils")
+set(LLVM_INCLUDE_EXAMPLES OFF CACHE BOOL "Include LLVM examples")
+set(LLVM_INCLUDE_TESTS OFF CACHE BOOL "Include LLVM tests")
+set(LLVM_INCLUDE_BENCHMARKS OFF CACHE BOOL "Include LLVM benchmarks")
 
-set(NO_RTTI "-fno-rtti")
+set(NO_RTTI "-fno-rtti" CACHE STRING "Disable RTTI")
 add_definitions(${NO_RTTI})
 
 if(NOT CMAKE_BUILD_TYPE)
