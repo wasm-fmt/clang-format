@@ -1753,11 +1753,11 @@ static const JSMallocFunctions def_malloc_funcs = {
 #if defined(__APPLE__)
     malloc_size,
 #elif defined(_WIN32)
-    (size_t(*)(const void *))_msize,
+    (size_t (*)(const void *))_msize,
 #elif defined(EMSCRIPTEN)
     NULL,
 #elif defined(__linux__)
-    (size_t(*)(const void *))malloc_usable_size,
+    (size_t (*)(const void *))malloc_usable_size,
 #else
     /* change this to `NULL,` if compilation fails */
     malloc_usable_size,
