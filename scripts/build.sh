@@ -25,8 +25,13 @@ SMALLEST_WASM=$(ls -Sr build/*.wasm | head -1)
 cp $SMALLEST_WASM pkg/clang-format.wasm
 npm exec terser -- src/template.js build/clang-format-esm.js --config-file .terser.json --output pkg/clang-format.js
 
+# format cli script itself
+echo '{"type": "commonjs"}' > build/package.json
+node ./build/clang-format-cli.js -i ./build/clang-format-cli.js
+
+# add shebang
+echo '#!/usr/bin/env node' | cat - ./build/clang-format-cli.js > ./pkg/clang-format-cli.cjs
 cp ./build/clang-format-cli.wasm ./pkg/
-cp ./build/clang-format-cli.js ./pkg/clang-format-cli.cjs
 
 cp ./src/clang-format.d.ts src/clang-format-*.js ./pkg/
 cp ./package.json LICENSE README.md .npmignore ./pkg/
