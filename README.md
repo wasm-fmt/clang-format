@@ -78,4 +78,4 @@ See [Clang-Format Style Options](https://clang.llvm.org/docs/ClangFormatStyleOpt
 2. Install [CMake](https://cmake.org/download/) (version 3.27 or later).
 3. Install [Ninja](https://ninja-build.org/) (version 1.11 or later).
 4. Clone this repository.
-5. Run scrips/build.sh.
+5. Run scripts/build.sh.
