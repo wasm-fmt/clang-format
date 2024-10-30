@@ -2,5 +2,6 @@
     "deno.enable": true,
     "deno.enablePaths": [
         "./test_deno"
-    ]
+    ],
+    "cmake.generator": "Ninja"
 }
