@@ -1,36 +1,21 @@
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
-import path from "node:path";
+import { basename } from "node:path";
+import { chdir } from "node:process";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import init, { format } from "../pkg/clang-format-node.js";
 
 await init();
 
-const test_root = fileURLToPath(new URL("../test_data", import.meta.url));
+const test_root = fileURLToPath(import.meta.resolve("../test_data"));
+chdir(test_root);
 
-for await (const dirent of await fs.opendir(test_root, { recursive: true })) {
-    if (!dirent.isFile()) {
+for await (const input_path of fs.glob(
+    "**/*.{c,cc,java,cs,js,ts,m,mm,proto}",
+)) {
+    if (basename(input_path).startsWith(".")) {
         continue;
-    }
-
-    const input_path = path.join(dirent.path, dirent.name);
-    const ext = path.extname(input_path);
-
-    switch (ext) {
-        case ".c":
-        case ".cc":
-        case ".java":
-        case ".cs":
-        case ".js":
-        case ".ts":
-        case ".m":
-        case ".mm":
-        case ".proto":
-            break;
-
-        default:
-            continue;
     }
 
     const expect_path = input_path + ".snap";
@@ -40,10 +25,8 @@ for await (const dirent of await fs.opendir(test_root, { recursive: true })) {
         fs.readFile(expect_path, "utf-8"),
     ]);
 
-    const test_name = path.relative(test_root, input_path);
-
-    test(test_name, () => {
-        const actual = format(input, dirent.name);
+    test(input_path, () => {
+        const actual = format(input, input_path);
         assert.equal(actual, expected);
     });
 }
