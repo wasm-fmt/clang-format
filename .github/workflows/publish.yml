@@ -43,7 +43,8 @@ jobs:
                   WASM_OPT: 1
 
             - name: Publish to npm
-              run: cd pkg && npm publish --provenance
+              working-directory: pkg
+              run: npm publish --provenance
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -53,15 +54,18 @@ jobs:
                   registry-url: "https://npm.pkg.github.com"
 
             - name: Publish to GitHub Packages
-              run: cd pkg && npm publish
+              working-directory: pkg
+              run: npm publish
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
             - name: Publish to jsr.io
-              run: cd pkg && npx jsr publish
+              working-directory: pkg
+              run: npx jsr publish --allow-dirty
 
             - name: Pack
-              run: cd pkg && npm pack
+              working-directory: pkg
+              run: npm pack
 
             - name: Set version
               id: vars
