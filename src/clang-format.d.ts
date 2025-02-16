@@ -132,7 +132,7 @@ export declare function formatLineRange(
 ): string;
 
 /**
- * ormats the specified range of bytes in the given content using the specified style.
+ * Formats the specified range of bytes in the given content using the specified style.
  *
  * @param {string} content - The content to format.
  * @param {ByteRange[]} range - Array<[offset, length]> - The range of bytes to format.
