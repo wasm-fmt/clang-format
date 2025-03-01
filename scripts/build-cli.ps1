@@ -17,7 +17,7 @@ $env:CXX = (Get-Command clang++ -ErrorAction SilentlyContinue).Path
 $env:BUILD_TARGET = "cli"
 
 # Run cmake and ninja
-emcmake cmake -G Ninja ..
+emcmake cmake -G Ninja -DLLVM_TARGETS_TO_BUILD="X86" ..
 ninja clang-format-wasm
 
 # Return to project root
