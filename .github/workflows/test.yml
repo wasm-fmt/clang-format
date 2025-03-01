@@ -8,8 +8,7 @@ on:
         types: ["opened", "reopened", "synchronize"]
 
 jobs:
-    build:
-        name: build
+    build-lib:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
@@ -30,20 +29,70 @@ jobs:
                   node-version-file: ".node-version"
 
             - name: Build
-              run: ./scripts/build.sh
-
-            - name: Pack
-              run: cd pkg && npm pack
+              run: ./scripts/build-lib.sh
 
             - name: Upload
               uses: actions/upload-artifact@v4
               with:
-                  name: build
+                  name: build-lib
                   path: pkg
+
+    build-cli-linux:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - name: Install llvm and clang
+              run: sudo apt-get install llvm clang
+            - name: Install CMake
+              run: sudo apt-get install cmake
+            - name: Install Ninja
+              run: sudo apt-get install ninja-build
+            - name: Install Emscripten
+              uses: mymindstorm/setup-emsdk@v14
+              with:
+                  version: 3.1.72
+
+            - name: Install Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version-file: ".node-version"
+
+            - name: Build
+              run: ./scripts/build-cli.sh
+
+            - name: Upload
+              uses: actions/upload-artifact@v4
+              with:
+                  name: build-cli-linux
+                  path: pkg
+
+    build-cli-win32:
+        runs-on: windows-latest
+        steps:
+            - uses: actions/checkout@v4
+            - name: Install Ninja
+              run: choco install ninja
+            - name: Install Emscripten
+              uses: mymindstorm/setup-emsdk@v14
+              with:
+                  version: 3.1.72
+
+            - name: Build CLI
+              run: ./scripts/build-cli.ps1
+              shell: pwsh
+              env:
+                  BUILD_TARGET: cli
+
+            - name: Upload Windows CLI artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: build-cli-win32
+                  path: |
+                      pkg
 
     node-test:
         runs-on: ubuntu-latest
-        needs: build
+        needs: build-lib
         steps:
             - uses: actions/checkout@v4
             - uses: actions/download-artifact@v4
@@ -59,7 +108,7 @@ jobs:
 
     cli-test:
         runs-on: ubuntu-latest
-        needs: build
+        needs: build-lib
         steps:
             - uses: actions/checkout@v4
             - uses: actions/download-artifact@v4
@@ -76,7 +125,7 @@ jobs:
 
     deno-test:
         runs-on: ubuntu-latest
-        needs: build
+        needs: build-lib
         steps:
             - uses: actions/checkout@v4
             - uses: actions/download-artifact@v4
@@ -92,7 +141,7 @@ jobs:
 
     bun-test:
         runs-on: ubuntu-latest
-        needs: build
+        needs: build-lib
         steps:
             - uses: actions/checkout@v4
             - uses: actions/download-artifact@v4

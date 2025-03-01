@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.24.0)
 
 message(STATUS "Using toolchain file: ${CMAKE_TOOLCHAIN_FILE}")
+message(STATUS "Building on platform: ${CMAKE_SYSTEM_NAME}")
 
 include(FetchContent)
 
@@ -47,47 +48,31 @@ set(LLVM_LIBRARIES
 
 project(clang-format-wasm)
 
-add_custom_target(clang-format-wasm)
-add_dependencies(clang-format-wasm clang-format-esm clang-format-cli)
-
-add_executable(clang-format-esm src/lib.cc src/binding.cc)
-target_include_directories(clang-format-esm PRIVATE ${LLVM_INCLUDE_DIRS})
-target_compile_features(clang-format-esm PRIVATE cxx_std_17)
-target_compile_options(clang-format-esm PRIVATE
-    -Os
-    -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0
-)
-
-target_link_libraries(clang-format-esm PRIVATE
-    ${LLVM_LIBRARIES}
-    "-lembind"
-    "-fno-rtti"
-    "-s MINIMAL_RUNTIME=1"
-    "-s DYNAMIC_EXECUTION=0"
-    "-s FILESYSTEM=0"
-    "-s MODULARIZE=1"
-    "-s ENVIRONMENT=web"
-    "-s IMPORTED_MEMORY=1"
-    "-s ALLOW_MEMORY_GROWTH=1"
-    "-s MINIMAL_RUNTIME_STREAMING_WASM_COMPILATION=1"
-)
-
-add_executable(clang-format-cli
-    ${llvm_project_SOURCE_DIR}/clang/tools/clang-format/ClangFormat.cpp
-)
-target_include_directories(clang-format-cli PRIVATE ${LLVM_INCLUDE_DIRS})
-target_compile_features(clang-format-cli PRIVATE cxx_std_17)
-target_compile_options(clang-format-cli PRIVATE
-    -Os
-    -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0
-)
-
-target_link_libraries(clang-format-cli PRIVATE
-    ${LLVM_LIBRARIES}
-    "-fno-rtti"
-    "-lnodefs.js"
-    "-s DYNAMIC_EXECUTION=0"
-    "-s ENVIRONMENT=node"
-    "-s NODERAWFS=1"
-    "-s ALLOW_MEMORY_GROWTH=1"
-)
+# Define build targets based on platform
+if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+    add_custom_target(clang-format-wasm)
+    
+    if(DEFINED ENV{BUILD_TARGET})
+        if($ENV{BUILD_TARGET} STREQUAL "lib")
+            message(STATUS "Building Lib target")
+            include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/clang-format-esm.cmake)
+            add_dependencies(clang-format-wasm clang-format-esm)
+        elseif($ENV{BUILD_TARGET} STREQUAL "cli")
+            message(STATUS "Building CLI target")
+            include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/clang-format-cli.cmake)
+            add_dependencies(clang-format-wasm clang-format-cli)
+        else()
+            message(STATUS "Building all targets")
+            include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/clang-format-esm.cmake)
+            include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/clang-format-cli.cmake)
+            add_dependencies(clang-format-wasm clang-format-esm clang-format-cli)
+        endif()
+    else()
+        message(STATUS "Building all targets")
+        include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/clang-format-esm.cmake)
+        include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/clang-format-cli.cmake)
+        add_dependencies(clang-format-wasm clang-format-esm clang-format-cli)
+    endif()
+else()
+    message(FATAL_ERROR "Unsupported platform: ${CMAKE_SYSTEM_NAME}. This project requires Emscripten.")
+endif()
