@@ -73,7 +73,8 @@ target_link_libraries(clang-format-esm PRIVATE
 )
 
 add_executable(clang-format-cli
-    ${llvm_project_SOURCE_DIR}/clang/tools/clang-format/ClangFormat.cpp
+    src/cli.cc
+    src/CustomFileSystem.cc
 )
 target_include_directories(clang-format-cli PRIVATE ${LLVM_INCLUDE_DIRS})
 target_compile_features(clang-format-cli PRIVATE cxx_std_17)
@@ -86,6 +87,7 @@ target_link_libraries(clang-format-cli PRIVATE
     ${LLVM_LIBRARIES}
     "-fno-rtti"
     "-lnodefs.js"
+    "--pre-js ${CMAKE_CURRENT_SOURCE_DIR}/src/cli-pre.js"
     "-s DYNAMIC_EXECUTION=0"
     "-s ENVIRONMENT=node"
     "-s NODERAWFS=1"
