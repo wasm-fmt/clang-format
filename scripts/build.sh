@@ -36,10 +36,12 @@ cp ./package.json LICENSE README.md .npmignore ./pkg/
 cp ./build/_deps/llvm_project-src/clang/tools/clang-format/git-clang-format ./pkg/
 cp ./build/_deps/llvm_project-src/clang/tools/clang-format/clang-format-diff.py ./pkg/
 
+ls -lh ./pkg
+
 # fix cli options
 git apply ./scripts/extra-tool.patch
 
-git diff --no-index build/_deps/llvm_project-src/clang/tools/clang-format/ClangFormat.cpp ./src/cli.cc >tracked.patch
+git diff --no-index build/_deps/llvm_project-src/clang/tools/clang-format/ClangFormat.cpp ./src/cli.cc >tracked.patch || true
 
 ./scripts/package.mjs ./package.json
 
