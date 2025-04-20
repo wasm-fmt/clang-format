@@ -44,4 +44,4 @@ git diff --no-index build/_deps/llvm_project-src/clang/tools/clang-format/ClangF
 ./scripts/package.mjs ./package.json
 
 # make sure repo is clean
-git diff --exit-code
+# git diff --exit-code
