@@ -38,11 +38,6 @@ cp ./build/_deps/llvm_project-src/clang/tools/clang-format/clang-format-diff.py 
 
 ls -lh ./pkg
 
-# fix cli options
-git apply ./scripts/extra-tool.patch
-
-git diff --no-index build/_deps/llvm_project-src/clang/tools/clang-format/ClangFormat.cpp ./src/cli.cc >tracked.patch || true
-
 ./scripts/package.mjs ./package.json
 
 # make sure repo is clean

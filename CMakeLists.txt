@@ -6,6 +6,8 @@ include(FetchContent)
 
 set(LLVM_ENABLE_PROJECTS clang CACHE STRING "LLVM projects to build")
 
+add_definitions(-D__WASM__)
+
 set(LLVM_INCLUDE_UTILS OFF CACHE BOOL "Include LLVM utils")
 set(LLVM_INCLUDE_EXAMPLES OFF CACHE BOOL "Include LLVM examples")
 set(LLVM_INCLUDE_TESTS OFF CACHE BOOL "Include LLVM tests")

@@ -1,7 +1,7 @@
-diff --git a/build/_deps/llvm_project-src/clang/tools/clang-format/ClangFormat.cpp b/./src/cli.cc
-index c4b6209..21262e5 100644
---- a/build/_deps/llvm_project-src/clang/tools/clang-format/ClangFormat.cpp
-+++ b/./src/cli.cc
+diff --git a/src/cli.cc b/src/cli.cc
+index 2861005..69ec009 100644
+--- a/src/cli.cc
++++ b/src/cli.cc
 @@ -12,7 +12,7 @@
  ///
  //===----------------------------------------------------------------------===//
@@ -20,7 +20,7 @@ index c4b6209..21262e5 100644
  using namespace llvm;
  using clang::tooling::Replacements;
  
-@@ -451,9 +453,12 @@ static bool format(StringRef FileName, bool ErrorOnIncompleteFormat = false) {
+@@ -448,9 +450,12 @@ static bool format(StringRef FileName, bool ErrorOnIncompleteFormat = false) {
      return true;
    }
  
@@ -34,7 +34,7 @@ index c4b6209..21262e5 100644
    if (!FormatStyle) {
      llvm::errs() << toString(FormatStyle.takeError()) << "\n";
      return true;
-@@ -570,10 +575,15 @@ static int dumpConfig() {
+@@ -571,10 +576,15 @@ static int dumpConfig() {
      }
      Code = std::move(CodeOrErr.get());
    }
@@ -51,7 +51,7 @@ index c4b6209..21262e5 100644
    if (!FormatStyle) {
      llvm::errs() << toString(FormatStyle.takeError()) << "\n";
      return 1;
-@@ -606,24 +616,26 @@ static bool isIgnored(StringRef FilePath) {
+@@ -607,24 +617,26 @@ static bool isIgnored(StringRef FilePath) {
    String Path;
    String AbsPath{FilePath};
  
@@ -84,7 +84,7 @@ index c4b6209..21262e5 100644
  
      std::ifstream IgnoreFile{Path.c_str()};
      if (!IgnoreFile.good())
-@@ -643,7 +655,7 @@ static bool isIgnored(StringRef FilePath) {
+@@ -644,7 +656,7 @@ static bool isIgnored(StringRef FilePath) {
    if (IgnoreDir.empty())
      return false;
  
