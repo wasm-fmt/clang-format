@@ -1,8 +1,0 @@
-{
-    "ecma": 2017,
-    "module": true,
-    "compress": {
-        "passes": 2
-    },
-    "mangle": true
-}

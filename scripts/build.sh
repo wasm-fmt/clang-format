@@ -23,7 +23,7 @@ fi
 SMALLEST_WASM=$(ls -Sr build/clang-format-e*.wasm | head -1)
 
 cp $SMALLEST_WASM pkg/clang-format.wasm
-npm exec terser -- src/template.js build/clang-format-esm.js --config-file .terser.json --output pkg/clang-format.js
+cat src/template.js build/clang-format-esm.js >pkg/clang-format.js
 
 # add shebang
 echo '#!/usr/bin/env node' | cat - ./build/clang-format-cli.js >./pkg/clang-format-cli.cjs

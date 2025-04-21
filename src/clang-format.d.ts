@@ -1,9 +1,9 @@
 export type InitInput =
-    | RequestInfo
-    | URL
-    | Response
-    | BufferSource
-    | WebAssembly.Module;
+	| RequestInfo
+	| URL
+	| Response
+	| BufferSource
+	| WebAssembly.Module;
 
 export default function init(input?: InitInput): Promise<void>;
 
@@ -22,33 +22,33 @@ export default function init(input?: InitInput): Promise<void>;
  *
  */
 export type Style =
-    | "LLVM"
-    | "Google"
-    | "Chromium"
-    | "Mozilla"
-    | "WebKit"
-    | "Microsoft"
-    | "GNU"
-    | (string & {});
+	| "LLVM"
+	| "Google"
+	| "Chromium"
+	| "Mozilla"
+	| "WebKit"
+	| "Microsoft"
+	| "GNU"
+	| (string & {});
 
 /**
  * The filename to use for determining the language.
  */
 export type Filename =
-    | "main.c"
-    | "main.cc"
-    | "main.cxx"
-    | "main.cpp"
-    | "main.java"
-    | "main.js"
-    | "main.mjs"
-    | "main.ts"
-    | "main.json"
-    | "main.m"
-    | "main.mm"
-    | "main.proto"
-    | "main.cs"
-    | (string & {});
+	| "main.c"
+	| "main.cc"
+	| "main.cxx"
+	| "main.cpp"
+	| "main.java"
+	| "main.js"
+	| "main.mjs"
+	| "main.ts"
+	| "main.json"
+	| "main.m"
+	| "main.mm"
+	| "main.proto"
+	| "main.cs"
+	| (string & {});
 
 /**
  * Formats the given content using the specified style.
@@ -73,9 +73,9 @@ export type Filename =
  * @see {@link https://clang.llvm.org/docs/ClangFormatStyleOptions.html}
  */
 export declare function format(
-    content: string,
-    filename?: Filename,
-    style?: Style,
+	content: string,
+	filename?: Filename,
+	style?: Style,
 ): string;
 
 /**
@@ -90,7 +90,6 @@ export type ByteRange = [offset: number, length: number];
 
 /**
  * Formats the specified range of lines in the given content using the specified style.
- *
  *
  * @param {string} content - The content to format.
  * @param {LineRange[]} range - Array<[startLine, endLine]> - The range of lines to format.
@@ -115,24 +114,24 @@ export type ByteRange = [offset: number, length: number];
  * @see {@link https://clang.llvm.org/docs/ClangFormatStyleOptions.html}
  */
 export declare function format_line_range(
-    content: string,
-    range: ByteRange[] | [[offset: number]],
-    filename?: Filename,
-    style?: Style,
+	content: string,
+	range: ByteRange[] | [[offset: number]],
+	filename?: Filename,
+	style?: Style,
 ): string;
 
 /**
  * @deprecated Use `format_line_range` instead.
  */
 export declare function formatLineRange(
-    content: string,
-    range: ByteRange[] | [[offset: number]],
-    filename?: Filename,
-    style?: Style,
+	content: string,
+	range: ByteRange[] | [[offset: number]],
+	filename?: Filename,
+	style?: Style,
 ): string;
 
 /**
- * ormats the specified range of bytes in the given content using the specified style.
+ * Formats the specified range of bytes in the given content using the specified style.
  *
  * @param {string} content - The content to format.
  * @param {ByteRange[]} range - Array<[offset, length]> - The range of bytes to format.
@@ -155,20 +154,20 @@ export declare function formatLineRange(
  * @see {@link https://clang.llvm.org/docs/ClangFormatStyleOptions.html}
  */
 export declare function format_byte_range(
-    content: string,
-    range: LineRange[],
-    filename?: Filename,
-    style?: Style,
+	content: string,
+	range: LineRange[],
+	filename?: Filename,
+	style?: Style,
 ): string;
 
 /**
  * @deprecated Use `format_byte_range` instead.
  */
 export declare function formatByteRange(
-    content: string,
-    range: LineRange[],
-    filename?: Filename,
-    style?: Style,
+	content: string,
+	range: LineRange[],
+	filename?: Filename,
+	style?: Style,
 ): string;
 
 export declare function version(): string;

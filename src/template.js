@@ -1,3 +1,4 @@
+/* @ts-self-types="./clang-format.d.ts" */
 async function load(module) {
     if (typeof Response === "function" && module instanceof Response) {
         if ("compileStreaming" in WebAssembly) {
