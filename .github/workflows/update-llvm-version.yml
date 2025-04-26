@@ -55,7 +55,7 @@ jobs:
             - name: Commit changes
               if: steps.check-version.outputs.need_update == 'true'
               run: |
-                  git config --local user.email "action@github.com"
+                  git config --local user.email "github-actions[bot]@users.noreply.github.com"
                   git config --local user.name "GitHub Action"
                   git checkout -b update-llvm-version
                   git add CMakeLists.txt
