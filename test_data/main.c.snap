@@ -22,16 +22,16 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <inttypes.h>
-#include <string.h>
 #include <assert.h>
+#include <fenv.h>
+#include <inttypes.h>
+#include <math.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/time.h>
 #include <time.h>
-#include <fenv.h>
-#include <math.h>
 #if defined(__APPLE__)
 #include <malloc/malloc.h>
 #elif defined(__linux__)
@@ -41,9 +41,9 @@
 #endif
 
 #include "cutils.h"
+#include "libregexp.h"
 #include "list.h"
 #include "quickjs.h"
-#include "libregexp.h"
 #ifdef CONFIG_BIGNUM
 #include "libbf.h"
 #endif
@@ -109,9 +109,9 @@
 // #define FORCE_GC_AT_MALLOC
 
 #ifdef CONFIG_ATOMICS
+#include <errno.h>
 #include <pthread.h>
 #include <stdatomic.h>
-#include <errno.h>
 #endif
 
 enum {
@@ -873,11 +873,11 @@ struct JSObject {
       uint8_t __gc_mark;  /* corresponds to header.mark/gc_obj_type */
 
       uint8_t extensible : 1;
-      uint8_t free_mark : 1;  /* only used when freeing objects with cycles */
-      uint8_t is_exotic : 1;  /* TRUE if object has exotic property handlers */
-      uint8_t fast_array : 1; /* TRUE if u.array is used for get/put (for
-                                 JS_CLASS_ARRAY, JS_CLASS_ARGUMENTS and typed
-                                 arrays) */
+      uint8_t free_mark : 1; /* only used when freeing objects with cycles */
+      uint8_t is_exotic : 1; /* TRUE if object has exotic property handlers */
+      uint8_t fast_array
+          : 1; /* TRUE if u.array is used for get/put (for JS_CLASS_ARRAY,
+                  JS_CLASS_ARGUMENTS and typed arrays) */
       uint8_t is_constructor : 1; /* TRUE if object is a constructor function */
       uint8_t is_uncatchable_error : 1; /* if TRUE, error is not catchable */
       uint8_t tmp_mark : 1;             /* used in JS_WriteObjectRec() */
@@ -33716,8 +33716,9 @@ typedef struct BCReaderState {
 } BCReaderState;
 
 #ifdef DUMP_READ_OBJECT
-static void __attribute__((format(printf, 2, 3)))
-bc_read_trace(BCReaderState *s, const char *fmt, ...) {
+static void
+    __attribute__((format(printf, 2, 3))) bc_read_trace(BCReaderState *s,
+                                                        const char *fmt, ...) {
   va_list ap;
   int i, n, n0;
 
@@ -46545,7 +46546,8 @@ static const JSCFunctionListEntry js_global_funcs[] = {
     JS_CFUNC_DEF("escape", 1, js_global_escape),
     JS_CFUNC_DEF("unescape", 1, js_global_unescape),
     JS_PROP_DOUBLE_DEF("Infinity", 1.0 / 0.0, 0),
-    JS_PROP_DOUBLE_DEF("NaN", NAN, 0), JS_PROP_UNDEFINED_DEF("undefined", 0),
+    JS_PROP_DOUBLE_DEF("NaN", NAN, 0),
+    JS_PROP_UNDEFINED_DEF("undefined", 0),
 
     /* for the 'Date' implementation */
     JS_CFUNC_DEF("__date_clock", 0, js___date_clock),

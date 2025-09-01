@@ -86,9 +86,9 @@ static auto format_range(const std::unique_ptr<llvm::MemoryBuffer> code,
       new llvm::vfs::InMemoryFileSystem);
   FileManager Files(FileSystemOptions(), InMemoryFileSystem);
 
-  IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts(new DiagnosticOptions());
+  DiagnosticOptions DiagOpts;
   DiagnosticsEngine Diagnostics(
-      IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs), &*DiagOpts);
+      IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs), DiagOpts);
   SourceManager Sources(Diagnostics, Files);
 
   StringRef _style = style;
@@ -134,10 +134,10 @@ static auto format_range(const std::unique_ptr<llvm::MemoryBuffer> code,
     FormatStyle->QualifierOrder = {Qualifiers.begin(), Qualifiers.end()};
   }
 
-  if (SortIncludes)
-    FormatStyle->SortIncludes = FormatStyle::SI_CaseSensitive;
-  else
-    FormatStyle->SortIncludes = FormatStyle::SI_Never;
+  if (SortIncludes) {
+    FormatStyle->SortIncludes = {};
+    FormatStyle->SortIncludes.Enabled = true;
+  }
 
   unsigned CursorPosition = Cursor;
   Replacements Replaces = sortIncludes(*FormatStyle, code->getBuffer(), ranges,
@@ -146,8 +146,8 @@ static auto format_range(const std::unique_ptr<llvm::MemoryBuffer> code,
   // To format JSON insert a variable to trick the code into thinking its
   // JavaScript.
   if (FormatStyle->isJson() && !FormatStyle->DisableFormat) {
-    auto err = Replaces.add(tooling::Replacement(
-        tooling::Replacement(AssumedFileName, 0, 0, "x = ")));
+    auto err =
+        Replaces.add(tooling::Replacement(AssumedFileName, 0, 0, "x = "));
     if (err)
       return Err("Bad Json variable insertion");
   }
@@ -190,9 +190,9 @@ static auto format_range(const std::string str,
   IntrusiveRefCntPtr<llvm::vfs::InMemoryFileSystem> InMemoryFileSystem(
       new llvm::vfs::InMemoryFileSystem);
   FileManager Files(FileSystemOptions(), InMemoryFileSystem);
+  DiagnosticOptions DiagOpts;
   DiagnosticsEngine Diagnostics(
-      IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs),
-      new DiagnosticOptions);
+      IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs), DiagOpts);
   SourceManager Sources(Diagnostics, Files);
   FileID ID = createInMemoryFile("<irrelevant>", *Code, Sources, Files,
                                  InMemoryFileSystem.get());

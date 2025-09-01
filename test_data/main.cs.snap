@@ -408,7 +408,7 @@ public class Button : ContentControl, ICommandSource, IClickableControl {
 
     if (change.Property == CommandProperty) {
       if (((ILogical)this).IsAttachedToLogicalTree) {
-        var (oldValue, newValue) = change.GetOldAndNewValue < ICommand ?>();
+        var (oldValue, newValue) = change.GetOldAndNewValue<ICommand?>();
         if (oldValue is ICommand oldCommand) {
           oldCommand.CanExecuteChanged -= CanExecuteChanged;
         }
@@ -444,7 +444,7 @@ public class Button : ContentControl, ICommandSource, IClickableControl {
     } else if (change.Property == IsPressedProperty) {
       UpdatePseudoClasses();
     } else if (change.Property == FlyoutProperty) {
-      var (oldFlyout, newFlyout) = change.GetOldAndNewValue < FlyoutBase ?>();
+      var (oldFlyout, newFlyout) = change.GetOldAndNewValue<FlyoutBase?>();
 
       // If flyout is changed while one is already open, make sure we
       // close the old one first

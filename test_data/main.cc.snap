@@ -17,6 +17,7 @@
 #endif
 #include <ATen/cuda/CUDAContext.h>
 #include <ATen/cuda/CUDAGeneratorImpl.h>
+#include <ATen/cuda/CUDAGraphsUtils.cuh>
 #include <ATen/cuda/CachingHostAllocator.h>
 #include <ATen/cuda/Sleep.h>
 #include <ATen/cuda/detail/CUDAHooks.h>
@@ -24,7 +25,6 @@
 #include <c10/core/StorageImpl.h>
 #include <c10/cuda/CUDACachingAllocator.h>
 #include <c10/cuda/CUDAFunctions.h>
-#include <ATen/cuda/CUDAGraphsUtils.cuh>
 
 #ifdef USE_NCCL
 #include <torch/csrc/cuda/python_nccl.h>
@@ -32,6 +32,11 @@
 #include <c10/util/CallOnce.h>
 #include <c10/util/irange.h>
 
+#include <array>
+#include <chrono>
+#include <iostream>
+#include <sstream>
+#include <thread>
 #include <torch/csrc/CudaIPCTypes.h>
 #include <torch/csrc/Generator.h>
 #include <torch/csrc/cuda/CUDAPluggableAllocator.h>
@@ -45,11 +50,6 @@
 #include <torch/csrc/utils/pycfunction_helpers.h>
 #include <torch/csrc/utils/python_numbers.h>
 #include <torch/csrc/utils/python_strings.h>
-#include <array>
-#include <chrono>
-#include <iostream>
-#include <sstream>
-#include <thread>
 #include <unordered_map>
 #ifndef WIN32
 #include <pthread.h>

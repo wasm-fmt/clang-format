@@ -3,9 +3,9 @@
 #else
 #import <PromiseKit/PromiseKit-Swift.h>
 #endif
-#import "PMKCallVariadicBlock.m"
 #import "AnyPromise+Private.h"
 #import "AnyPromise.h"
+#import "PMKCallVariadicBlock.m"
 
 NSString *const PMKErrorDomain = @"PMKErrorDomain";
 
