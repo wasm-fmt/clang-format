@@ -42,11 +42,13 @@ jobs:
               env:
                   WASM_OPT: 1
 
+            # Ensure npm 11.5.1 or later is installed
+            - name: Update npm
+              run: npm install -g npm@latest
+
             - name: Publish to npm
               working-directory: pkg
               run: npm publish --provenance
-              env:
-                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
             - uses: actions/setup-node@v4
               with:
