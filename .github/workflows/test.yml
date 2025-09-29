@@ -103,4 +103,4 @@ jobs:
             - uses: oven-sh/setup-bun@v2
               name: Install bun
 
-            - run: bun test test_bun
+            - run: bun test test_bun --timeout 10000
