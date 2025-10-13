@@ -4531,7 +4531,7 @@ static __maybe_unused void JS_DumpShape(JSRuntime *rt, int i, JSShape *sh) {
 
   /* XXX: should output readable class prototype */
   printf("%5d %3d%c %14p %5d %5d", i, sh->header.ref_count, " *"[sh->is_hashed],
-         (void *)sh -> proto, sh -> prop_size, sh -> prop_count);
+         (void *)sh->proto, sh->prop_size, sh->prop_count);
   for (j = 0; j < sh->prop_count; j++) {
     printf(" %s",
            JS_AtomGetStrRT(rt, atom_buf, sizeof(atom_buf), sh->prop[j].atom));
@@ -11263,7 +11263,7 @@ static __maybe_unused void JS_DumpObject(JSRuntime *rt, JSObject *p) {
   printf("%14p %4d ", (void *)p, p->header.ref_count);
   if (sh) {
     printf("%3d%c %14p ", sh->header.ref_count, " *"[sh->is_hashed],
-           (void *)sh -> proto);
+           (void *)sh->proto);
   } else {
     printf("%3s  %14s ", "-", "-");
   }
