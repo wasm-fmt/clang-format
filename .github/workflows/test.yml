@@ -55,7 +55,7 @@ jobs:
               with:
                   node-version-file: ".node-version"
 
-            - run: node --test
+            - run: node --test "test_node/*.mjs"
 
     cli-test:
         runs-on: ubuntu-latest
