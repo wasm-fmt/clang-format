@@ -77,14 +77,15 @@ target_link_libraries(clang-format-esm PRIVATE
     ${LLVM_LIBRARIES}
     "-lembind"
     "-fno-rtti"
-    "-s MINIMAL_RUNTIME=1"
-    "-s DYNAMIC_EXECUTION=0"
-    "-s FILESYSTEM=0"
-    "-s MODULARIZE=1"
-    "-s ENVIRONMENT=web"
-    "-s IMPORTED_MEMORY=1"
     "-s ALLOW_MEMORY_GROWTH=1"
+    "-s ASSERTIONS=0"
+    "-s DYNAMIC_EXECUTION=0"
+    "-s ENVIRONMENT=web"
+    "-s FILESYSTEM=0"
+    "-s IMPORTED_MEMORY=1"
+    "-s MINIMAL_RUNTIME=1"
     "-s MINIMAL_RUNTIME_STREAMING_WASM_COMPILATION=1"
+    "-s MODULARIZE=1"
 )
 
 add_executable(clang-format-cli
@@ -103,8 +104,9 @@ target_link_libraries(clang-format-cli PRIVATE
     "-fno-rtti"
     "-lnodefs.js"
     "--pre-js ${CMAKE_CURRENT_SOURCE_DIR}/src/cli-pre.js"
+    "-s ALLOW_MEMORY_GROWTH=1"
+    "-s ASSERTIONS=0"
     "-s DYNAMIC_EXECUTION=0"
     "-s ENVIRONMENT=node"
     "-s NODERAWFS=1"
-    "-s ALLOW_MEMORY_GROWTH=1"
 )
