@@ -4,17 +4,30 @@ message(STATUS "Using toolchain file: ${CMAKE_TOOLCHAIN_FILE}")
 
 include(FetchContent)
 
+# LLVM build targets
+set(LLVM_TARGETS_TO_BUILD "" CACHE STRING "LLVM target architectures")
 set(LLVM_ENABLE_PROJECTS clang CACHE STRING "LLVM projects to build")
 
+# LLVM feature toggles
+set(LLVM_ENABLE_BACKTRACES OFF CACHE BOOL "Backtrace support")
+set(LLVM_ENABLE_CRASH_OVERRIDES OFF CACHE BOOL "Crash overrides")
+set(LLVM_ENABLE_TERMINFO OFF CACHE BOOL "Terminfo support")
+set(LLVM_ENABLE_ZLIB OFF CACHE BOOL "Zlib compression")
+set(LLVM_ENABLE_ZSTD OFF CACHE BOOL "Zstd compression")
+
+# LLVM build contents
+set(LLVM_INCLUDE_BENCHMARKS OFF CACHE BOOL "Include benchmarks")
+set(LLVM_INCLUDE_EXAMPLES OFF CACHE BOOL "Include examples")
+set(LLVM_INCLUDE_TESTS OFF CACHE BOOL "Include tests")
+set(LLVM_INCLUDE_UTILS OFF CACHE BOOL "Include utils")
+
+# Clang feature toggles
+set(CLANG_ENABLE_OBJC_REWRITER OFF CACHE BOOL "Objective-C rewriter")
+set(CLANG_ENABLE_STATIC_ANALYZER OFF CACHE BOOL "Static analyzer")
+
+# Compile options
 add_definitions(-D__WASM__)
-
-set(LLVM_INCLUDE_UTILS OFF CACHE BOOL "Include LLVM utils")
-set(LLVM_INCLUDE_EXAMPLES OFF CACHE BOOL "Include LLVM examples")
-set(LLVM_INCLUDE_TESTS OFF CACHE BOOL "Include LLVM tests")
-set(LLVM_INCLUDE_BENCHMARKS OFF CACHE BOOL "Include LLVM benchmarks")
-
-set(NO_RTTI "-fno-rtti" CACHE STRING "Disable RTTI")
-add_definitions(${NO_RTTI})
+add_definitions(-fno-rtti)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "MinSizeRel")
