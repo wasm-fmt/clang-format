@@ -16,8 +16,8 @@ ninja clang-format-wasm
 cd $project_root
 
 if [[ ! -z "${WASM_OPT}" ]]; then
-    wasm-opt -Os build/clang-format-esm.wasm -o build/clang-format-esm-Os.wasm
-    wasm-opt -Oz build/clang-format-esm.wasm -o build/clang-format-esm-Oz.wasm
+    wasm-opt --enable-bulk-memory --enable-nontrapping-float-to-int -Os build/clang-format-esm.wasm -o build/clang-format-esm-Os.wasm
+    wasm-opt --enable-bulk-memory --enable-nontrapping-float-to-int -Oz build/clang-format-esm.wasm -o build/clang-format-esm-Oz.wasm
 fi
 
 SMALLEST_WASM=$(ls -Sr build/clang-format-e*.wasm | head -1)
