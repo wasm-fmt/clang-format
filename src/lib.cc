@@ -22,28 +22,12 @@
 using namespace llvm;
 using clang::tooling::Replacements;
 
-static std::string FallbackStyle{clang::format::DefaultFallbackStyle};
-
-static unsigned Cursor{0};
-
-static bool SortIncludes{false};
-
-static std::string QualifierAlignment{""};
-
-static auto Ok(const std::string content) -> Result {
-  return {false, std::move(content)};
-}
-
-static auto Err(const std::string content) -> Result {
-  return {true, std::move(content)};
-}
-
 namespace clang {
 namespace format {
 
-static FileID createInMemoryFile(StringRef FileName, MemoryBufferRef Source,
-                                 SourceManager &Sources, FileManager &Files,
-                                 llvm::vfs::InMemoryFileSystem *MemFS) {
+static auto createInMemoryFile(StringRef FileName, MemoryBufferRef Source,
+                               SourceManager &Sources, FileManager &Files,
+                               llvm::vfs::InMemoryFileSystem *MemFS) -> FileID {
   MemFS->addFileNoOwn(FileName, 0, Source);
   auto File = Files.getOptionalFileRef(FileName);
   assert(File && "File not added to MemFS?");
@@ -65,6 +49,7 @@ static auto isPredefinedStyle(StringRef style) -> bool {
 static auto format_range(const std::unique_ptr<llvm::MemoryBuffer> code,
                          const std::string assumedFileName,
                          const std::string style,
+                         const std::string fallback_style,
                          std::vector<tooling::Range> ranges) -> Result {
   StringRef BufStr = code->getBuffer();
 
@@ -75,7 +60,7 @@ static auto format_range(const std::unique_ptr<llvm::MemoryBuffer> code,
     err << "encoding with unsupported byte order mark \"" << InvalidBOM
         << "\" detected.";
 
-    return Err(err.str());
+    return Result::error(err.str());
   }
 
   StringRef AssumedFileName = assumedFileName;
@@ -102,46 +87,21 @@ static auto format_range(const std::unique_ptr<llvm::MemoryBuffer> code,
     _style = "file:.clang-format";
   }
 
-  llvm::Expected<FormatStyle> FormatStyle =
-      getStyle(_style, AssumedFileName, FallbackStyle, code->getBuffer(),
-               InMemoryFileSystem.get(), false);
+  llvm::Expected<format::FormatStyle> FormatStyle =
+      format::getStyle(_style, AssumedFileName, fallback_style,
+                       code->getBuffer(), InMemoryFileSystem.get(), false);
 
   InMemoryFileSystem.reset();
 
   if (!FormatStyle) {
     std::string err = llvm::toString(FormatStyle.takeError());
-    return Err(err);
+    return Result::error(err);
   }
 
-  StringRef QualifierAlignmentOrder = QualifierAlignment;
-
-  FormatStyle->QualifierAlignment =
-      StringSwitch<FormatStyle::QualifierAlignmentStyle>(
-          QualifierAlignmentOrder.lower())
-          .Case("right", FormatStyle::QAS_Right)
-          .Case("left", FormatStyle::QAS_Left)
-          .Default(FormatStyle->QualifierAlignment);
-
-  if (FormatStyle->QualifierAlignment == FormatStyle::QAS_Left) {
-    FormatStyle->QualifierOrder = {"const", "volatile", "type"};
-  } else if (FormatStyle->QualifierAlignment == FormatStyle::QAS_Right) {
-    FormatStyle->QualifierOrder = {"type", "const", "volatile"};
-  } else if (QualifierAlignmentOrder.contains("type")) {
-    FormatStyle->QualifierAlignment = FormatStyle::QAS_Custom;
-    SmallVector<StringRef> Qualifiers;
-    QualifierAlignmentOrder.split(Qualifiers, " ", /*MaxSplit=*/-1,
-                                  /*KeepEmpty=*/false);
-    FormatStyle->QualifierOrder = {Qualifiers.begin(), Qualifiers.end()};
-  }
-
-  if (SortIncludes) {
-    FormatStyle->SortIncludes = {};
-    FormatStyle->SortIncludes.Enabled = true;
-  }
-
-  unsigned CursorPosition = Cursor;
-  Replacements Replaces = sortIncludes(*FormatStyle, code->getBuffer(), ranges,
-                                       AssumedFileName, &CursorPosition);
+  unsigned CursorPosition = 0;
+  tooling::Replacements Replaces =
+      format::sortIncludes(*FormatStyle, code->getBuffer(), ranges,
+                           AssumedFileName, &CursorPosition);
 
   // To format JSON insert a variable to trick the code into thinking its
   // JavaScript.
@@ -149,7 +109,7 @@ static auto format_range(const std::unique_ptr<llvm::MemoryBuffer> code,
     auto err =
         Replaces.add(tooling::Replacement(AssumedFileName, 0, 0, "x = "));
     if (err)
-      return Err("Bad Json variable insertion");
+      return Result::error("Bad Json variable insertion");
   }
 
   auto ChangedCode =
@@ -157,167 +117,180 @@ static auto format_range(const std::unique_ptr<llvm::MemoryBuffer> code,
 
   // Get new affected ranges after sorting `#includes`.
   ranges = tooling::calculateRangesAfterReplacements(Replaces, ranges);
-  FormattingAttemptStatus Status;
-  Replacements FormatChanges =
-      reformat(*FormatStyle, ChangedCode, ranges, AssumedFileName, &Status);
+  format::FormattingAttemptStatus Status;
+  tooling::Replacements FormatChanges = format::reformat(
+      *FormatStyle, ChangedCode, ranges, AssumedFileName, &Status);
   Replaces = Replaces.merge(FormatChanges);
 
-  return Ok(
-      cantFail(tooling::applyAllReplacements(code->getBuffer(), Replaces)));
-}
+  std::string result =
+      cantFail(tooling::applyAllReplacements(code->getBuffer(), Replaces));
 
-static auto format_range(const std::string str,
-                         const std::string assumedFileName,
-                         const std::string style, const bool is_line_range,
-                         const std::vector<unsigned> ranges) -> Result {
-  ErrorOr<std::unique_ptr<MemoryBuffer>> CodeOrErr =
-      MemoryBuffer::getMemBuffer(str);
+  if (Status.FormatComplete && result == code->getBuffer().str())
+    return Result::unchanged();
 
-  if (std::error_code EC = CodeOrErr.getError())
-    return Err(EC.message());
-  std::unique_ptr<llvm::MemoryBuffer> Code = std::move(CodeOrErr.get());
-  if (Code->getBufferSize() == 0)
-    return Ok(""); // Empty files are formatted correctly.
-
-  std::vector<tooling::Range> Ranges;
-
-  if (ranges.empty()) {
-    fillRanges(Code.get(), Ranges);
-    return format_range(std::move(Code), assumedFileName, style,
-                        std::move(Ranges));
-  }
-
-  IntrusiveRefCntPtr<llvm::vfs::InMemoryFileSystem> InMemoryFileSystem(
-      new llvm::vfs::InMemoryFileSystem);
-  FileManager Files(FileSystemOptions(), InMemoryFileSystem);
-  DiagnosticOptions DiagOpts;
-  DiagnosticsEngine Diagnostics(
-      IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs), DiagOpts);
-  SourceManager Sources(Diagnostics, Files);
-  FileID ID = createInMemoryFile("<irrelevant>", *Code, Sources, Files,
-                                 InMemoryFileSystem.get());
-
-  if (is_line_range) {
-    for (auto FromLine = begin(ranges); FromLine < end(ranges); FromLine += 2) {
-      auto ToLine = FromLine + 1;
-
-      SourceLocation Start = Sources.translateLineCol(ID, *FromLine, 1);
-      SourceLocation End = Sources.translateLineCol(ID, *ToLine, UINT_MAX);
-      if (Start.isInvalid() || End.isInvalid())
-        return Err("invalid line number");
-      unsigned Offset = Sources.getFileOffset(Start);
-      unsigned Length = Sources.getFileOffset(End) - Offset;
-      Ranges.push_back(tooling::Range(Offset, Length));
-    }
-  } else {
-    if (ranges.size() > 2 && ranges.size() % 2 != 0)
-      return Err("number of -offset and -length arguments must match");
-
-    if (ranges.size() == 1) {
-      auto offset = begin(ranges);
-      if (*offset >= Code->getBufferSize()) {
-        std::stringstream err;
-        err << "offset " << *offset << " is outside the file";
-        return Err(err.str());
-      }
-      SourceLocation Start =
-          Sources.getLocForStartOfFile(ID).getLocWithOffset(*offset);
-      SourceLocation End = Sources.getLocForEndOfFile(ID);
-
-      unsigned Offset = Sources.getFileOffset(Start);
-      unsigned Length = Sources.getFileOffset(End) - Offset;
-
-      Ranges.push_back(tooling::Range(Offset, Length));
-    } else {
-      for (auto offset = begin(ranges); offset < end(ranges); offset += 2) {
-        auto length = offset + 1;
-
-        if (*offset >= Code->getBufferSize()) {
-          std::stringstream err;
-          err << "offset " << *offset << " is outside the file";
-          return Err(err.str());
-        }
-
-        unsigned end = *offset + *length;
-        if (end > Code->getBufferSize()) {
-          std::stringstream err;
-          err << "invalid length " << *length << ", offset + length (" << end
-              << ") is outside the file.";
-          return Err(err.str());
-        }
-
-        SourceLocation Start =
-            Sources.getLocForStartOfFile(ID).getLocWithOffset(*offset);
-        SourceLocation End = Start.getLocWithOffset(*length);
-
-        unsigned Offset = Sources.getFileOffset(Start);
-        unsigned Length = Sources.getFileOffset(End) - Offset;
-
-        Ranges.push_back(tooling::Range(Offset, Length));
-      }
-    }
-  }
-
-  return format_range(std::move(Code), assumedFileName, style,
-                      std::move(Ranges));
-}
-
-static auto format(const std::string str, const std::string assumedFileName,
-                   const std::string style) -> Result {
-  ErrorOr<std::unique_ptr<MemoryBuffer>> CodeOrErr =
-      MemoryBuffer::getMemBuffer(str);
-
-  if (std::error_code EC = CodeOrErr.getError())
-    return Err(EC.message());
-  std::unique_ptr<llvm::MemoryBuffer> Code = std::move(CodeOrErr.get());
-  if (Code->getBufferSize() == 0)
-    return Ok(""); // Empty files are formatted correctly.
-
-  std::vector<tooling::Range> Ranges;
-  fillRanges(Code.get(), Ranges);
-
-  return format_range(std::move(Code), assumedFileName, style,
-                      std::move(Ranges));
+  return Result::ok(result);
 }
 
 } // namespace format
 } // namespace clang
 
-auto version() -> std::string {
+ClangFormat::ClangFormat()
+    : style_(clang::format::DefaultFormatStyle),
+      fallback_style_(clang::format::DefaultFallbackStyle) {}
+
+auto ClangFormat::with_style(const std::string style) -> ClangFormat * {
+  style_ = style;
+  return this;
+}
+
+auto ClangFormat::with_fallback_style(const std::string style)
+    -> ClangFormat * {
+  fallback_style_ = style;
+  return this;
+}
+
+auto ClangFormat::format(const std::string code, const std::string filename)
+    -> Result {
+  ErrorOr<std::unique_ptr<MemoryBuffer>> CodeOrErr =
+      MemoryBuffer::getMemBuffer(code);
+
+  if (std::error_code EC = CodeOrErr.getError())
+    return Result::error(EC.message());
+  std::unique_ptr<llvm::MemoryBuffer> Code = std::move(CodeOrErr.get());
+  if (Code->getBufferSize() == 0)
+    return Result::unchanged();
+
+  std::vector<clang::tooling::Range> Ranges;
+  clang::format::fillRanges(Code.get(), Ranges);
+
+  return clang::format::format_range(std::move(Code), filename, style_,
+                                     fallback_style_, std::move(Ranges));
+}
+
+auto ClangFormat::format_range(const std::string code,
+                               const std::string filename, unsigned offset,
+                               unsigned length) -> Result {
+  ErrorOr<std::unique_ptr<MemoryBuffer>> CodeOrErr =
+      MemoryBuffer::getMemBuffer(code);
+
+  if (std::error_code EC = CodeOrErr.getError())
+    return Result::error(EC.message());
+  std::unique_ptr<llvm::MemoryBuffer> Code = std::move(CodeOrErr.get());
+  if (Code->getBufferSize() == 0)
+    return Result::unchanged();
+
+  std::vector<clang::tooling::Range> Ranges;
+
+  IntrusiveRefCntPtr<llvm::vfs::InMemoryFileSystem> InMemoryFileSystem(
+      new llvm::vfs::InMemoryFileSystem);
+  clang::FileManager Files(clang::FileSystemOptions(), InMemoryFileSystem);
+  clang::DiagnosticOptions DiagOpts;
+  clang::DiagnosticsEngine Diagnostics(
+      IntrusiveRefCntPtr<clang::DiagnosticIDs>(new clang::DiagnosticIDs),
+      DiagOpts);
+  clang::SourceManager Sources(Diagnostics, Files);
+  clang::FileID ID = clang::format::createInMemoryFile(
+      "<irrelevant>", *Code, Sources, Files, InMemoryFileSystem.get());
+
+  if (length == 0) {
+    if (offset >= Code->getBufferSize()) {
+      std::stringstream err;
+      err << "offset " << offset << " is outside the file";
+      return Result::error(err.str());
+    }
+    clang::SourceLocation Start =
+        Sources.getLocForStartOfFile(ID).getLocWithOffset(offset);
+    clang::SourceLocation End = Sources.getLocForEndOfFile(ID);
+
+    unsigned Offset = Sources.getFileOffset(Start);
+    unsigned Length = Sources.getFileOffset(End) - Offset;
+
+    Ranges.push_back(clang::tooling::Range(Offset, Length));
+  } else {
+    if (offset >= Code->getBufferSize()) {
+      std::stringstream err;
+      err << "offset " << offset << " is outside the file";
+      return Result::error(err.str());
+    }
+
+    unsigned end = offset + length;
+    if (end > Code->getBufferSize()) {
+      std::stringstream err;
+      err << "invalid length " << length << ", offset + length (" << end
+          << ") is outside the file.";
+      return Result::error(err.str());
+    }
+
+    clang::SourceLocation Start =
+        Sources.getLocForStartOfFile(ID).getLocWithOffset(offset);
+    clang::SourceLocation End = Start.getLocWithOffset(length);
+
+    unsigned Offset = Sources.getFileOffset(Start);
+    unsigned Length = Sources.getFileOffset(End) - Offset;
+
+    Ranges.push_back(clang::tooling::Range(Offset, Length));
+  }
+
+  return clang::format::format_range(
+      std::move(Code), filename, style_, fallback_style_, std::move(Ranges));
+}
+
+auto ClangFormat::format_line(const std::string code,
+                              const std::string filename, unsigned from_line,
+                              unsigned to_line) -> Result {
+  ErrorOr<std::unique_ptr<MemoryBuffer>> CodeOrErr =
+      MemoryBuffer::getMemBuffer(code);
+
+  if (std::error_code EC = CodeOrErr.getError())
+    return Result::error(EC.message());
+  std::unique_ptr<llvm::MemoryBuffer> Code = std::move(CodeOrErr.get());
+  if (Code->getBufferSize() == 0)
+    return Result::unchanged();
+
+  if (from_line < 1)
+    return Result::error("start line should be at least 1");
+  if (from_line > to_line)
+    return Result::error("start line should not exceed end line");
+
+  std::vector<clang::tooling::Range> Ranges;
+
+  IntrusiveRefCntPtr<llvm::vfs::InMemoryFileSystem> InMemoryFileSystem(
+      new llvm::vfs::InMemoryFileSystem);
+  clang::FileManager Files(clang::FileSystemOptions(), InMemoryFileSystem);
+  clang::DiagnosticOptions DiagOpts;
+  clang::DiagnosticsEngine Diagnostics(
+      IntrusiveRefCntPtr<clang::DiagnosticIDs>(new clang::DiagnosticIDs),
+      DiagOpts);
+  clang::SourceManager Sources(Diagnostics, Files);
+  clang::FileID ID = clang::format::createInMemoryFile(
+      "<irrelevant>", *Code, Sources, Files, InMemoryFileSystem.get());
+
+  const auto Start = Sources.translateLineCol(ID, from_line, 1);
+  const auto End = Sources.translateLineCol(ID, to_line, UINT_MAX);
+  if (Start.isInvalid() || End.isInvalid())
+    return Result::error("invalid line range");
+
+  const auto Offset = Sources.getFileOffset(Start);
+  const auto Length = Sources.getFileOffset(End) - Offset;
+
+  Ranges.push_back(clang::tooling::Range(Offset, Length));
+
+  return clang::format::format_range(
+      std::move(Code), filename, style_, fallback_style_, std::move(Ranges));
+}
+
+auto ClangFormat::version() -> std::string {
   return clang::getClangToolFullVersion("clang-format");
 }
 
-auto format(const std::string str, const std::string assumedFileName,
-            const std::string style) -> Result {
-  return clang::format::format(str, assumedFileName, style);
-}
-
-auto format_byte(const std::string str, const std::string assumedFileName,
-                 const std::string style, const std::vector<unsigned> ranges)
-    -> Result {
-  return clang::format::format_range(str, assumedFileName, style, false,
-                                     std::move(ranges));
-}
-
-auto format_line(const std::string str, const std::string assumedFileName,
-                 const std::string style, const std::vector<unsigned> ranges)
-    -> Result {
-  return clang::format::format_range(str, assumedFileName, style, true,
-                                     std::move(ranges));
-}
-
-auto set_fallback_style(const std::string style) -> void {
-  FallbackStyle = style;
-}
-
-auto set_sort_includes(const bool sort) -> void { SortIncludes = sort; }
-
-auto dump_config(const std::string style, const std::string FileName,
-                 const std::string code) -> Result {
+auto ClangFormat::dump_config(const std::string style,
+                              const std::string filename,
+                              const std::string code) -> Result {
   llvm::Expected<clang::format::FormatStyle> FormatStyle =
-      clang::format::getStyle(style, FileName, FallbackStyle, code);
+      clang::format::getStyle(style, filename,
+                              clang::format::DefaultFallbackStyle, code);
   if (!FormatStyle)
-    return Err(llvm::toString(FormatStyle.takeError()));
+    return Result::error(llvm::toString(FormatStyle.takeError()));
   std::string Config = clang::format::configurationAsText(*FormatStyle);
-  return Ok(Config);
+  return Result::ok(Config);
 }

@@ -1,9 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import init, {
-    format_byte_range,
-    format_line_range,
-} from "../pkg/clang-format-node.js";
+import init, { format_byte_range, format_line_range } from "../pkg/clang-format-node.js";
 
 await init();
 
@@ -24,31 +21,27 @@ const part2 = `int main() {
 const content = part1 + "\n" + part2;
 
 test("should format line range", () => {
-    const actual = format_line_range(content, [[1, 5]], "test.c");
+	const actual = format_line_range(content, 1, 5, "test.c");
 
-    const slice1 = actual.split("\n").slice(0, part1_lines.length).join("\n");
-    const slice2 = actual.split("\n").slice(part1_lines.length).join("\n");
+	const slice1 = actual.split("\n").slice(0, part1_lines.length).join("\n");
+	const slice2 = actual.split("\n").slice(part1_lines.length).join("\n");
 
-    assert.notEqual(slice1, part1);
-    assert.equal(slice2, part2);
+	assert.notEqual(slice1, part1);
+	assert.equal(slice2, part2);
 });
 
 test("should format byte range", () => {
-    const encoder = new TextEncoder();
-    const part1_bytes = encoder.encode(part1);
-    const part2_bytes = encoder.encode(part2);
-    const part1_byte_length = part1_bytes.byteLength;
-    const part2_byte_length = part2_bytes.byteLength;
+	const encoder = new TextEncoder();
+	const part1_bytes = encoder.encode(part1);
+	const part2_bytes = encoder.encode(part2);
+	const part1_byte_length = part1_bytes.byteLength;
+	const part2_byte_length = part2_bytes.byteLength;
 
-    const actual = format_byte_range(
-        content,
-        [[part1_byte_length, part2_byte_length]],
-        "test.c",
-    );
+	const actual = format_byte_range(content, part1_byte_length, part2_byte_length, "test.c");
 
-    const slice1 = actual.split("\n").slice(0, part1_lines.length).join("\n");
-    const slice2 = actual.split("\n").slice(part1_lines.length).join("\n");
+	const slice1 = actual.split("\n").slice(0, part1_lines.length).join("\n");
+	const slice2 = actual.split("\n").slice(part1_lines.length).join("\n");
 
-    assert.equal(slice1, part1);
-    assert.notEqual(slice2, part2);
+	assert.equal(slice1, part1);
+	assert.notEqual(slice2, part2);
 });

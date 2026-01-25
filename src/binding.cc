@@ -4,23 +4,23 @@
 using namespace emscripten;
 
 EMSCRIPTEN_BINDINGS(my_module) {
-  register_vector<unsigned>("RangeList");
+  enum_<ResultStatus>("ResultStatus")
+      .value("Success", ResultStatus::Success)
+      .value("Error", ResultStatus::Error)
+      .value("Unchanged", ResultStatus::Unchanged);
 
   value_object<Result>("Result")
-      .field("error", &Result::error)
+      .field("status", &Result::status)
       .field("content", &Result::content);
 
-  function<std::string>("version", &version);
-  function<Result, const std::string, const std::string, const std::string>(
-      "format", &format);
-  function<Result, const std::string, const std::string, const std::string,
-           const std::vector<unsigned>>("format_byte", &format_byte);
-  function<Result, const std::string, const std::string, const std::string,
-           const std::vector<unsigned>>("format_line", &format_line);
-  function<void, const std::string>("set_fallback_style", &set_fallback_style);
-  function<void, bool>("set_sort_includes", &set_sort_includes);
-  function<Result, const std::string, const std::string, const std::string>(
-      "dump_config", &dump_config);
+  class_<ClangFormat>("ClangFormat")
+      .constructor()
+      .function("with_style", &ClangFormat::with_style, allow_raw_pointers())
+      .function("with_fallback_style", &ClangFormat::with_fallback_style,
+                allow_raw_pointers())
+      .function("format", &ClangFormat::format)
+      .function("format_range", &ClangFormat::format_range)
+      .function("format_line", &ClangFormat::format_line)
+      .class_function("version", &ClangFormat::version)
+      .class_function("dump_config", &ClangFormat::dump_config);
 }
-
-int main(void) {}
