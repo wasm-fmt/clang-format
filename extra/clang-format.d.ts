@@ -1,6 +1,23 @@
-export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
-
-export default function init(input?: InitInput): Promise<void>;
+/**
+ * WASM formatter for C/C++/Java/JavaScript/TypeScript/Objective-C/Protobuf/C# using clang-format.
+ *
+ * @example
+ * ```ts
+ * import { format } from "@wasm-fmt/clang-format";
+ *
+ * const source = `
+ * #include <iostream>
+ * using namespace std;
+ * auto main() -> int{
+ * std::cout << "Hello World!" << std::endl;
+ * return 0;}
+ * `;
+ *
+ * const formatted = format(source, "main.cc", "Chromium");
+ * ```
+ *
+ * @module
+ */
 
 /**
  * The style to use for formatting.
@@ -61,22 +78,13 @@ export type Filename =
  */
 export declare function format(content: string, filename?: Filename, style?: Style): string;
 
-/**
- * Both the startLine and endLine are 1-based.
- */
-export type LineRange = [startLine: number, endLine: number];
-
-/**
- * Both the offset and length are measured in bytes.
- */
-export type ByteRange = [offset: number, length: number];
 
 /**
  * Formats the specified range of lines in the given content using the specified style.
  *
  * @param {string} content - The content to format.
- * @param {number} fromLine - The starting line number (1-based).
- * @param {number} toLine - The ending line number (1-based).
+ * @param {number} from - The starting line number (1-based).
+ * @param {number} to - The ending line number (1-based).
  * @param {Filename} filename - The filename to use for determining the language.
  * @param {Style} style - The style to use for formatting.
  *   Supported style values are:
@@ -97,8 +105,8 @@ export type ByteRange = [offset: number, length: number];
  */
 export declare function format_line_range(
 	content: string,
-	fromLine: number,
-	toLine: number,
+	from: number,
+	to: number,
 	filename?: Filename,
 	style?: Style,
 ): string;

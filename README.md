@@ -18,15 +18,13 @@ npx jsr add @fmt/clang-format
 
 ## CLI
 
-This repository contains two executable files, namely clang-format and git-clang-format.
+This repository contains 3 executable files, namely `clang-format`, `git-clang-format` and `clang-format-diff`.
 For more information, please refer to https://clang.llvm.org/docs/ClangFormat.html
 
-## API
+## Node.js / Deno / Bun / Bundler
 
-```JavaScript
-import init, { format } from "@wasm-fmt/clang-format";
-
-await init();
+```javascript
+import { format } from "@wasm-fmt/clang-format";
 
 const source = `
 #include <iostream>
@@ -38,9 +36,9 @@ return 0;}
 
 // JSON representation of Clang-Format Style Options
 const config = JSON.stringify({
-  BasedOnStyle: "Chromium",
-  IndentWidth: 4,
-  ColumnLimit: 80,
+	BasedOnStyle: "Chromium",
+	IndentWidth: 4,
+	ColumnLimit: 80,
 });
 
 // or YAML representation of Clang-Format Style Options which is used in `.clang-format` file
@@ -55,11 +53,7 @@ ColumnLimit: 80
 // or the preset name
 const config3 = "Chromium";
 
-const formatted = format(
-    source,
-    "main.cc",
-    config,
-);
+const formatted = format(source, "main.cc", config);
 
 console.log(formatted);
 ```
@@ -71,6 +65,53 @@ The third argument of `format` is a Clang-Format Style Options, which can be one
 3. the string content of a `.clang-format` file.
 
 See [Clang-Format Style Options](https://clang.llvm.org/docs/ClangFormatStyleOptions.html) for more information.
+
+## Web
+
+For web environments, you need to initialize WASM module manually:
+
+```javascript
+import init, { format } from "@wasm-fmt/clang-format/web";
+
+await init();
+
+const source = `
+#include <iostream>
+using namespace std;
+auto main() -> int{
+std::cout << "Hello World!" << std::endl;
+return 0;}
+`;
+
+const formatted = format(source, "main.cc", "Chromium");
+console.log(formatted);
+```
+
+### Vite
+
+```JavaScript
+import init, { format } from "@wasm-fmt/clang-format/vite";
+
+await init();
+// ...
+```
+
+## Entry Points
+
+- `.` - Auto-detects environment (Node.js uses node, Webpack uses bundler, default is ESM)
+- `./node` - Node.js environment (no init required)
+- `./esm` - ESM environments like Deno (no init required)
+- `./bundler` - Bundlers like Webpack (no init required)
+- `./web` - Web browsers (requires manual init)
+- `./vite` - Vite bundler (requires manual init)
+
+# How does it work?
+
+[Clang-Format] is a tool to format C/C++/Java/JavaScript/TypeScript/Objective-C/Protobuf/C# code.
+
+This package is a WebAssembly build of Clang-Format, with a JavaScript wrapper.
+
+[Clang-Format]: https://clang.llvm.org/docs/ClangFormat.html
 
 # Build from source
 

@@ -1,0 +1,17 @@
+---
+BasedOnStyle: Google
+Language: JavaScript
+AlignOperands: AlignAfterOperator
+AllowShortBlocksOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: Never
+BreakBeforeBraces: Attach
+BreakBeforeTernaryOperators: true
+ColumnLimit: 120
+Cpp11BracedListStyle: false
+IndentWidth: 4
+JavaScriptQuotes: Double
+JavaScriptWrapImports: true
+MaxEmptyLinesToKeep: 1
+SpacesInContainerLiterals: false
+UseTab: Never

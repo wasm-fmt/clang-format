@@ -80,12 +80,9 @@ target_link_libraries(clang-format-esm PRIVATE
     "-s ALLOW_MEMORY_GROWTH=1"
     "-s ASSERTIONS=0"
     "-s DYNAMIC_EXECUTION=0"
-    "-s ENVIRONMENT=web"
+    "-s ENVIRONMENT=shell"
     "-s FILESYSTEM=0"
-    "-s IMPORTED_MEMORY=1"
-    "-s MINIMAL_RUNTIME=1"
-    "-s MINIMAL_RUNTIME_STREAMING_WASM_COMPILATION=1"
-    "-s MODULARIZE=1"
+    "-s WASM_ASYNC_COMPILATION=0"
 )
 
 add_executable(clang-format-cli

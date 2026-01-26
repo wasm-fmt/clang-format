@@ -1,3 +1,3 @@
 Module.preRun = function customPreRun() {
-    ENV.PWD = process.cwd();
-}
+	ENV.PWD = process.cwd();
+};

@@ -1,33 +1,26 @@
-/// <reference lib="deno.ns" />
-import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { walk } from "https://deno.land/std@0.224.0/fs/walk.ts";
-import { relative } from "https://deno.land/std@0.224.0/path/mod.ts";
-import init, { format } from "../pkg/clang-format.js";
+#!/usr/bin/env deno test --allow-read --parallel
+import { assertEquals } from "jsr:@std/assert";
+import { expandGlob } from "jsr:@std/fs";
+import { fromFileUrl, relative } from "jsr:@std/path";
 
-await init();
+import { format } from "../pkg/clang-format-esm.js";
 
-const update = Deno.args.includes("--update");
+const test_root = fromFileUrl(import.meta.resolve("../test_data"));
 
-const test_root = new URL("../test_data", import.meta.url);
-
-for await (const entry of walk(test_root, {
-    includeDirs: false,
-    exts: ["c", "cc", "java", "cs", "js", "ts", "m", "mm", "proto"],
+for await (const { path: input_path } of expandGlob("**/*.{c,cc,java,cs,js,ts,m,mm,proto}", {
+	root: test_root,
 })) {
-    const expect_path = entry.path + ".snap";
-    const input = Deno.readTextFileSync(entry.path);
+	const case_name = relative(test_root, input_path);
+	if (case_name.startsWith(".")) {
+		Deno.test.ignore(case_name, () => {});
+		continue;
+	}
 
-    if (update) {
-        const actual = format(input, entry.name) as unknown as string;
-        Deno.writeTextFileSync(expect_path, actual);
-    } else {
-        const expected = Deno.readTextFileSync(expect_path);
+	const snap_path = input_path + ".snap";
+	const [input, expected] = await Promise.all([Deno.readTextFile(input_path), Deno.readTextFile(snap_path)]);
 
-        const test_name = relative(test_root.pathname, entry.path);
-
-        Deno.test(test_name, () => {
-            const actual = format(input, entry.name) as unknown as string;
-            assertEquals(actual, expected);
-        });
-    }
+	Deno.test(case_name, () => {
+		const actual = format(input, input_path) as unknown as string;
+		assertEquals(actual, expected);
+	});
 }

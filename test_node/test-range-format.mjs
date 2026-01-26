@@ -1,8 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import init, { format_byte_range, format_line_range } from "../pkg/clang-format-node.js";
-
-await init();
+import { format_byte_range, format_line_range } from "../pkg/clang-format-node.js";
 
 const part1 = `struct Foo { // 1
     int    x; // 2

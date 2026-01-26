@@ -1,0 +1,19 @@
+{
+	"$schema": "https://jsr.io/schema/config-file.v1.json",
+	"name": "@fmt/clang-format",
+	"version": "21.1.8",
+	"exports": {
+		"./node": "./clang-format-node.js",
+		"./web": "./clang-format-web.js"
+	},
+	"publish": {
+		"include": [
+			"clang-format-*",
+			"clang-format.*",
+			"*.md"
+		],
+		"exclude": [
+			"!*"
+		]
+	}
+}

@@ -1,47 +1,63 @@
 {
-    "name": "@wasm-fmt/clang-format",
-    "author": "magic-akari <akari.ccino@gamil.com>",
-    "version": "21.1.8",
-    "description": "A wasm based clang-format",
-    "main": "clang-format.js",
-    "types": "clang-format.d.ts",
-    "type": "module",
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/wasm-fmt/clang-format.git"
-    },
-    "bin": {
-        "clang-format": "./clang-format-cli.cjs",
-        "git-clang-format": "./git-clang-format",
-        "clang-format-diff": "./clang-format-diff.py"
-    },
-    "exports": {
-        ".": {
-            "types": "./clang-format.d.ts",
-            "node": "./clang-format-node.js",
-            "default": "./clang-format.js"
-        },
-        "./vite": {
-            "types": "./clang-format.d.ts",
-            "default": "./clang-format-vite.js"
-        },
-        "./package.json": "./package.json",
-        "./*": "./*"
-    },
-    "engines": {
-        "node": ">=16.17.0"
-    },
-    "keywords": [
-        "wasm",
-        "clang-format",
-        "formatter"
-    ],
-    "license": "MIT",
-    "publishConfig": {
-        "access": "public"
-    },
-    "bugs": {
-        "url": "https://github.com/wasm-fmt/clang-format/issues"
-    },
-    "homepage": "https://github.com/wasm-fmt/clang-format#readme"
+	"name": "@wasm-fmt/clang-format",
+	"author": "magic-akari <akari.ccino@gamil.com>",
+	"version": "21.1.8",
+	"description": "A tool to format C/C++/Java/JavaScript/JSON/Objective-C/Protobuf/C# code",
+	"type": "module",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/wasm-fmt/clang-format.git"
+	},
+	"bin": {
+		"clang-format": "./clang-format-cli.cjs",
+		"git-clang-format": "./git-clang-format",
+		"clang-format-diff": "./clang-format-diff.py"
+	},
+	"exports": {
+		".": {
+			"types": "./clang-format.d.ts",
+			"bun": "./clang-format-node.js",
+			"module-sync": "./clang-format-node.js",
+			"node": "./clang-format-node.js",
+			"default": "./clang-format-esm.js"
+		},
+		"./esm": {
+			"types": "./clang-format.d.ts",
+			"default": "./clang-format-esm.js"
+		},
+		"./node": {
+			"types": "./clang-format.d.ts",
+			"default": "./clang-format-node.js"
+		},
+		"./web": {
+			"types": "./clang-format-web.d.ts",
+			"default": "./clang-format-web.js"
+		},
+		"./vite": {
+			"types": "./clang-format-web.d.ts",
+			"default": "./clang-format-vite.js"
+		},
+		"./wasm": "./clang-format.wasm",
+		"./package.json": "./package.json",
+		"./*": "./*"
+	},
+	"scripts": {
+		"version": "node ./scripts/sync_version.js && git add ."
+	},
+	"engines": {
+		"node": ">=16.17.0"
+	},
+	"keywords": [
+		"wasm",
+		"clang-format",
+		"formatter"
+	],
+	"license": "MIT",
+	"publishConfig": {
+		"access": "public"
+	},
+	"bugs": {
+		"url": "https://github.com/wasm-fmt/clang-format/issues"
+	},
+	"homepage": "https://github.com/wasm-fmt/clang-format#readme"
 }
