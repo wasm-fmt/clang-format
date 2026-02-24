@@ -32,6 +32,6 @@
 *.app
 
 .DS_Store
-pkg
+pkg/*
 node_modules
 build
