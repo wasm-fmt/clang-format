@@ -15,6 +15,9 @@ set(LLVM_ENABLE_TERMINFO OFF CACHE BOOL "Terminfo support")
 set(LLVM_ENABLE_ZLIB OFF CACHE BOOL "Zlib compression")
 set(LLVM_ENABLE_ZSTD OFF CACHE BOOL "Zstd compression")
 
+# Skip compiler version check - Emscripten uses its own libc++
+set(LLVM_COMPILER_CHECKED ON CACHE BOOL "Skip compiler version check")
+
 # LLVM build contents
 set(LLVM_INCLUDE_BENCHMARKS OFF CACHE BOOL "Include benchmarks")
 set(LLVM_INCLUDE_EXAMPLES OFF CACHE BOOL "Include examples")
