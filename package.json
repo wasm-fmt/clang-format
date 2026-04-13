@@ -1,7 +1,7 @@
 {
 	"name": "@wasm-fmt/clang-format",
 	"author": "magic-akari <akari.ccino@gamil.com>",
-	"version": "22.1.2",
+	"version": "22.1.3",
 	"description": "A tool to format C/C++/Java/JavaScript/JSON/Objective-C/Protobuf/C# code",
 	"type": "module",
 	"repository": {
