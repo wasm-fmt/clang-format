@@ -42,6 +42,7 @@
 		"./*": "./*"
 	},
 	"scripts": {
+		"check:llvm-patches": "bash ./scripts/check_llvm_patch_upstream.sh",
 		"version": "node ./scripts/sync_version.js && git add ."
 	},
 	"engines": {

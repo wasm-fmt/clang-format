@@ -37,6 +37,14 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 set(LLVM_VERSION "22.1.8")
+set(LLVM_PATCH_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/scripts/apply_llvm_patches.sh")
+file(GLOB LLVM_PATCH_FILES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/patches/llvm/*.patch"
+)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+    ${LLVM_PATCH_SCRIPT}
+    ${LLVM_PATCH_FILES}
+)
 
 FetchContent_Declare(llvm_project
     URL "https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/llvm-project-${LLVM_VERSION}.src.tar.xz"
@@ -46,6 +54,18 @@ FetchContent_Declare(llvm_project
 )
 
 FetchContent_MakeAvailable(llvm_project)
+FetchContent_GetProperties(llvm_project)
+
+if(LLVM_PATCH_FILES)
+    execute_process(
+        COMMAND bash "${LLVM_PATCH_SCRIPT}" "${llvm_project_SOURCE_DIR}"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        RESULT_VARIABLE LLVM_PATCH_RESULT
+    )
+    if(NOT LLVM_PATCH_RESULT EQUAL 0)
+        message(FATAL_ERROR "Failed to apply LLVM patches")
+    endif()
+endif()
 
 add_subdirectory(${llvm_project_SOURCE_DIR}/llvm)
 
