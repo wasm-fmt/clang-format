@@ -29,3 +29,30 @@ If the PR head changed, review the upstream diff, refresh this backport against
 the currently pinned LLVM source, then rebuild and run the tests. If the PR has
 merged and the pinned LLVM source is updated to a version containing it, remove
 this patch and the pin metadata.
+
+## `0002-disable-jobserver-on-wasi-llvm-22.1.8.patch`
+
+Local WASI build fix for LLVM `22.1.8`. `llvm/lib/Support/Jobserver.cpp` is
+compiled into `LLVMSupport`, but its Unix implementation uses file descriptor
+APIs such as `dup()` that are not available in wasi-libc. WASI builds use the
+existing dummy Jobserver implementation instead. `clang-format` does not depend
+on make jobserver integration.
+
+## `0003-wasi-disable-unsupported-unix-process-apis-llvm-22.1.8.patch`
+
+Local WASI build fix for LLVM `22.1.8`. Some Unix process helpers in
+`LLVMSupport` use `rlimit` and terminal `ioctl()` APIs that are not available in
+the WASI sysroot. WASI builds use no-op/default behavior for those helpers.
+
+## `0004-wasi-default-program-stack-size-llvm-22.1.8.patch`
+
+Local WASI build fix for LLVM `22.1.8`. `ProgramStack.cpp` queries
+`RLIMIT_STACK` on Unix, which the WASI sysroot does not provide. WASI builds use
+LLVM's existing default stack size instead.
+
+## `0005-wasi-skip-mapped-file-willneed-llvm-22.1.8.patch`
+
+Local WASI build fix for LLVM `22.1.8`. The WASI sysroot declares
+`posix_madvise()` in its emulated `sys/mman.h`, but wasi-sdk 33 does not provide
+the symbol at link time. WASI builds treat `mapped_file_region::willNeedImpl()`
+as a no-op, matching the existing `dontNeedImpl()` handling.

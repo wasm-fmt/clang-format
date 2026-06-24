@@ -1,0 +1,56 @@
+diff --git a/llvm/lib/Support/Unix/Process.inc b/llvm/lib/Support/Unix/Process.inc
+index 91de7ca13d3c..5c3d3d44d03f 100644
+--- a/llvm/lib/Support/Unix/Process.inc
++++ b/llvm/lib/Support/Unix/Process.inc
+@@ -141,6 +141,9 @@ void Process::GetTimeUsage(TimePoint<> &elapsed,
+ // their operation. To prevent the disk from filling up, this function
+ // does what's necessary to prevent their generation.
+ void Process::PreventCoreFiles() {
++#if defined(__wasi__)
++  return;
++#else
+   struct rlimit rlim;
+   getrlimit(RLIMIT_CORE, &rlim);
+ #ifdef __linux__
+@@ -193,6 +196,7 @@ void Process::PreventCoreFiles() {
+ #endif
+ 
+   coreFilesPrevented = true;
++#endif
+ }
+ 
+ std::optional<std::string> Process::GetEnv(StringRef Name) {
+@@ -334,7 +338,9 @@ static unsigned getColumns(int FileID) {
+   // instead if it isn't available.
+   unsigned Columns = 0;
+ 
+-#if defined(HAVE_SYS_IOCTL_H) && !defined(__sun__)
++#if defined(__wasi__)
++  (void)FileID;
++#elif defined(HAVE_SYS_IOCTL_H) && !defined(__sun__)
+   struct winsize ws;
+   if (ioctl(FileID, TIOCGWINSZ, &ws) == 0)
+     Columns = ws.ws_col;
+diff --git a/llvm/lib/Support/Unix/Program.inc b/llvm/lib/Support/Unix/Program.inc
+index 3ab9ebeee845..559ff53251ff 100644
+--- a/llvm/lib/Support/Unix/Program.inc
++++ b/llvm/lib/Support/Unix/Program.inc
+@@ -141,6 +141,10 @@ static bool RedirectIO(const StringRef *Path, int FD, std::string *ErrMsg) {
+ static void TimeOutHandler(int Sig) {}
+ 
+ static void SetMemoryLimits(unsigned size) {
++#if defined(__wasi__)
++  (void)size;
++  return;
++#else
+   struct rlimit r;
+   __typeof__(r.rlim_cur) limit = (__typeof__(r.rlim_cur))(size)*1048576;
+ 
+@@ -153,6 +157,7 @@ static void SetMemoryLimits(unsigned size) {
+   getrlimit(RLIMIT_RSS, &r);
+   r.rlim_cur = limit;
+   setrlimit(RLIMIT_RSS, &r);
++#endif
+ #endif
+ }
+ 

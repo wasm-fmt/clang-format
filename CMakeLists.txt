@@ -1,8 +1,58 @@
 cmake_minimum_required(VERSION 3.24.0)
 
+project(clang-format-wasm LANGUAGES C CXX)
+
 message(STATUS "Using toolchain file: ${CMAKE_TOOLCHAIN_FILE}")
 
 include(FetchContent)
+
+set(CLANG_FORMAT_BUILD_ESM_DEFAULT OFF)
+set(CLANG_FORMAT_BUILD_CLI_DEFAULT OFF)
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+    set(CLANG_FORMAT_BUILD_ESM_DEFAULT ON)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "WASI")
+    set(CLANG_FORMAT_BUILD_CLI_DEFAULT ON)
+endif()
+
+option(CLANG_FORMAT_BUILD_ESM "Build the Emscripten JavaScript API target" ${CLANG_FORMAT_BUILD_ESM_DEFAULT})
+option(CLANG_FORMAT_BUILD_CLI "Build the WASI clang-format CLI target" ${CLANG_FORMAT_BUILD_CLI_DEFAULT})
+
+if(CLANG_FORMAT_BUILD_ESM AND NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+    message(FATAL_ERROR "CLANG_FORMAT_BUILD_ESM requires the Emscripten toolchain")
+endif()
+
+if(CLANG_FORMAT_BUILD_CLI AND NOT CMAKE_SYSTEM_NAME STREQUAL "WASI")
+    message(FATAL_ERROR "CLANG_FORMAT_BUILD_CLI requires the WASI toolchain")
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "WASI")
+    add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions>)
+    add_compile_definitions(
+        _WASI_EMULATED_GETPID
+        _WASI_EMULATED_MMAN
+        _WASI_EMULATED_PROCESS_CLOCKS
+        _WASI_EMULATED_SIGNAL
+    )
+    list(APPEND CMAKE_REQUIRED_DEFINITIONS
+        -D_WASI_EMULATED_GETPID
+        -D_WASI_EMULATED_MMAN
+        -D_WASI_EMULATED_PROCESS_CLOCKS
+        -D_WASI_EMULATED_SIGNAL
+    )
+    list(APPEND CMAKE_REQUIRED_LIBRARIES
+        wasi-emulated-getpid
+        wasi-emulated-mman
+        wasi-emulated-process-clocks
+        wasi-emulated-signal
+    )
+    link_libraries(
+        wasi-emulated-getpid
+        wasi-emulated-mman
+        wasi-emulated-process-clocks
+        wasi-emulated-signal
+    )
+endif()
 
 # LLVM build targets
 set(LLVM_TARGETS_TO_BUILD "" CACHE STRING "LLVM target architectures")
@@ -12,6 +62,7 @@ set(LLVM_ENABLE_PROJECTS clang CACHE STRING "LLVM projects to build")
 set(LLVM_ENABLE_BACKTRACES OFF CACHE BOOL "Backtrace support")
 set(LLVM_ENABLE_CRASH_OVERRIDES OFF CACHE BOOL "Crash overrides")
 set(LLVM_ENABLE_TERMINFO OFF CACHE BOOL "Terminfo support")
+set(LLVM_ENABLE_THREADS OFF CACHE BOOL "Thread support")
 set(LLVM_ENABLE_ZLIB OFF CACHE BOOL "Zlib compression")
 set(LLVM_ENABLE_ZSTD OFF CACHE BOOL "Zstd compression")
 
@@ -23,8 +74,11 @@ set(LLVM_INCLUDE_BENCHMARKS OFF CACHE BOOL "Include benchmarks")
 set(LLVM_INCLUDE_EXAMPLES OFF CACHE BOOL "Include examples")
 set(LLVM_INCLUDE_TESTS OFF CACHE BOOL "Include tests")
 set(LLVM_INCLUDE_UTILS OFF CACHE BOOL "Include utils")
+set(LLVM_BUILD_TOOLS OFF CACHE BOOL "Build LLVM tools")
+set(LLVM_BUILD_UTILS OFF CACHE BOOL "Build LLVM utilities")
 
 # Clang feature toggles
+set(CLANG_BUILD_TOOLS OFF CACHE BOOL "Build Clang tools")
 set(CLANG_ENABLE_OBJC_REWRITER OFF CACHE BOOL "Objective-C rewriter")
 set(CLANG_ENABLE_STATIC_ANALYZER OFF CACHE BOOL "Static analyzer")
 
@@ -83,50 +137,42 @@ set(LLVM_LIBRARIES
     clangToolingCore
 )
 
-project(clang-format-wasm)
-
 add_custom_target(clang-format-wasm)
-add_dependencies(clang-format-wasm clang-format-esm clang-format-cli)
 
-add_executable(clang-format-esm src/lib.cc src/binding.cc)
-target_include_directories(clang-format-esm PRIVATE ${LLVM_INCLUDE_DIRS})
-target_compile_features(clang-format-esm PRIVATE cxx_std_17)
-target_compile_options(clang-format-esm PRIVATE
-    -Os
-    -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0
-)
+if(CLANG_FORMAT_BUILD_ESM)
+    add_executable(clang-format-esm src/lib.cc src/binding.cc)
+    add_dependencies(clang-format-wasm clang-format-esm)
+    target_include_directories(clang-format-esm PRIVATE ${LLVM_INCLUDE_DIRS})
+    target_compile_features(clang-format-esm PRIVATE cxx_std_17)
+    target_compile_options(clang-format-esm PRIVATE
+        -Os
+        -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0
+    )
 
-target_link_libraries(clang-format-esm PRIVATE
-    ${LLVM_LIBRARIES}
-    "-lembind"
-    "-fno-rtti"
-    "-s ALLOW_MEMORY_GROWTH=1"
-    "-s ASSERTIONS=0"
-    "-s DYNAMIC_EXECUTION=0"
-    "-s ENVIRONMENT=shell"
-    "-s FILESYSTEM=0"
-    "-s WASM_ASYNC_COMPILATION=0"
-)
+    target_link_libraries(clang-format-esm PRIVATE
+        ${LLVM_LIBRARIES}
+        "-lembind"
+        "-fno-rtti"
+        "-s ALLOW_MEMORY_GROWTH=1"
+        "-s ASSERTIONS=0"
+        "-s DYNAMIC_EXECUTION=0"
+        "-s ENVIRONMENT=shell"
+        "-s FILESYSTEM=0"
+        "-s WASM_ASYNC_COMPILATION=0"
+    )
+endif()
 
-add_executable(clang-format-cli
-    src/cli.cc
-    src/CustomFileSystem.cc
-)
-target_include_directories(clang-format-cli PRIVATE ${LLVM_INCLUDE_DIRS})
-target_compile_features(clang-format-cli PRIVATE cxx_std_17)
-target_compile_options(clang-format-cli PRIVATE
-    -Os
-    -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0
-)
-
-target_link_libraries(clang-format-cli PRIVATE
-    ${LLVM_LIBRARIES}
-    "-fno-rtti"
-    "-lnodefs.js"
-    "--pre-js ${CMAKE_CURRENT_SOURCE_DIR}/src/cli-pre.js"
-    "-s ALLOW_MEMORY_GROWTH=1"
-    "-s ASSERTIONS=0"
-    "-s DYNAMIC_EXECUTION=0"
-    "-s ENVIRONMENT=node"
-    "-s NODERAWFS=1"
-)
+if(CLANG_FORMAT_BUILD_CLI)
+    add_executable(clang-format-cli
+        "${llvm_project_SOURCE_DIR}/clang/tools/clang-format/ClangFormat.cpp"
+    )
+    add_dependencies(clang-format-wasm clang-format-cli)
+    set_target_properties(clang-format-cli PROPERTIES SUFFIX ".wasm")
+    target_include_directories(clang-format-cli PRIVATE ${LLVM_INCLUDE_DIRS})
+    target_compile_features(clang-format-cli PRIVATE cxx_std_17)
+    target_compile_options(clang-format-cli PRIVATE -Os)
+    target_link_libraries(clang-format-cli PRIVATE
+        ${LLVM_LIBRARIES}
+        "-fno-rtti"
+    )
+endif()

@@ -35,3 +35,5 @@
 pkg/*
 node_modules
 build
+build-wasi
+build-native-tools
