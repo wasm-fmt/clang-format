@@ -19,7 +19,7 @@ jobs:
               run: |
                   # Get the latest LLVM version
                   LATEST_VERSION=$(curl -s https://api.github.com/repos/llvm/llvm-project/releases/latest | jq -r '.tag_name' | sed 's/llvmorg-//')
-                  CURRENT_VERSION=$(grep -Po 'set\(LLVM_VERSION "(.*)"\)' CMakeLists.txt | grep -Po '".*"' | tr -d '"')
+                  CURRENT_VERSION=$(grep -Po 'set\(CLANG_FORMAT_LLVM_VERSION "(.*)"\)' cmake/LLVMSource.cmake | grep -Po '".*"' | tr -d '"')
 
                   echo "Latest LLVM version: $LATEST_VERSION"
                   echo "Current LLVM version: $CURRENT_VERSION"
@@ -35,11 +35,11 @@ jobs:
                     echo "need_update=false" >> $GITHUB_OUTPUT
                   fi
 
-            - name: Update CMakeLists.txt
+            - name: Update LLVM CMake module
               if: steps.check-version.outputs.need_update == 'true'
               run: |
                   LATEST_VERSION=${{ steps.check-version.outputs.latest_version }}
-                  sed -i "s/set(LLVM_VERSION \".*\")/set(LLVM_VERSION \"$LATEST_VERSION\")/" CMakeLists.txt
+                  sed -i "s/set(CLANG_FORMAT_LLVM_VERSION \".*\")/set(CLANG_FORMAT_LLVM_VERSION \"$LATEST_VERSION\")/" cmake/LLVMSource.cmake
 
                   # Calculate new SHA256 checksum
                   TARBALL_URL="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LATEST_VERSION}/llvm-project-${LATEST_VERSION}.src.tar.xz"
@@ -50,7 +50,7 @@ jobs:
                   rm "$TEMP_FILE"
 
                   # Update SHA256 checksum
-                  sed -i "s/URL_HASH SHA256=[a-f0-9]*/URL_HASH SHA256=$SHA256/" CMakeLists.txt
+                  sed -i "s/set(CLANG_FORMAT_LLVM_PROJECT_SHA256 \".*\")/set(CLANG_FORMAT_LLVM_PROJECT_SHA256 \"$SHA256\")/" cmake/LLVMSource.cmake
 
             - name: Commit changes
               if: steps.check-version.outputs.need_update == 'true'
@@ -58,7 +58,7 @@ jobs:
                   git config --local user.email "github-actions[bot]@users.noreply.github.com"
                   git config --local user.name "GitHub Action"
                   git checkout -b update-llvm-version
-                  git add CMakeLists.txt
+                  git add cmake/LLVMSource.cmake
                   git commit -m "chore: update LLVM version to ${{ steps.check-version.outputs.latest_version }}"
                   git push -f origin update-llvm-version
 

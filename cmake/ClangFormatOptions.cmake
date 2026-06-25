@@ -1,0 +1,28 @@
+include_guard(GLOBAL)
+
+set(CLANG_FORMAT_BUILD_ESM_DEFAULT OFF)
+set(CLANG_FORMAT_BUILD_CLI_DEFAULT OFF)
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+    set(CLANG_FORMAT_BUILD_ESM_DEFAULT ON)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "WASI")
+    set(CLANG_FORMAT_BUILD_CLI_DEFAULT ON)
+endif()
+
+option(CLANG_FORMAT_BUILD_ESM "Build the Emscripten JavaScript API target" ${CLANG_FORMAT_BUILD_ESM_DEFAULT})
+option(CLANG_FORMAT_BUILD_CLI "Build the WASI clang-format CLI target" ${CLANG_FORMAT_BUILD_CLI_DEFAULT})
+
+if(CLANG_FORMAT_BUILD_ESM AND NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+    message(FATAL_ERROR "CLANG_FORMAT_BUILD_ESM requires the Emscripten toolchain")
+endif()
+
+if(CLANG_FORMAT_BUILD_CLI AND NOT CMAKE_SYSTEM_NAME STREQUAL "WASI")
+    message(FATAL_ERROR "CLANG_FORMAT_BUILD_CLI requires the WASI toolchain")
+endif()
+
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE "MinSizeRel" CACHE STRING "Build type" FORCE)
+endif()
+
+add_compile_definitions(__WASM__)
+add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>)

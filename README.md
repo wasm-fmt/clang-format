@@ -116,13 +116,11 @@ This package is a WebAssembly build of Clang-Format, with a JavaScript wrapper.
 # Build from source
 
 1. Install [LLVM](https://llvm.org/docs/GettingStarted.html) and [Clang](https://clang.llvm.org/get_started.html) (version 18 or later).
-2. Install [CMake](https://cmake.org/download/) (version 3.27 or later).
-3. Install [Ninja](https://ninja-build.org/) (version 1.11 or later).
-4. Install [Emscripten](https://emscripten.org/docs/getting_started/downloads.html) (version 4.0.9).
-5. Install [wasi-sdk](https://github.com/WebAssembly/wasi-sdk) (version 33).
-6. Set `WASI_SDK_PATH` to the wasi-sdk install directory.
-7. Clone this repository.
-8. Run scripts/build.sh.
+2. Install CMake, Ninja, Node.js, and `wasm-tools`.
+3. Clone this repository.
+4. Install and activate Emscripten 4.0.23.
+5. Install wasi-sdk 33.
+6. Run `./scripts/build.sh`.
 
 For example:
 
@@ -131,7 +129,15 @@ export WASI_SDK_PATH=/path/to/wasi-sdk
 ./scripts/build.sh
 ```
 
-The build uses `$WASI_SDK_PATH/share/cmake/wasi-sdk-p1.cmake` for the
-`wasm32-wasip1` CLI target. It also builds native `llvm-tblgen` and
-`clang-tblgen` helpers in `build-native-tools/` before configuring the WASI
-build.
+The build script consumes the prepared environment; it does not install or
+activate toolchains itself. Set `WASI_SDK_PATH` to the directory containing
+`share/cmake/wasi-sdk-p1.cmake`, or put `wasm32-wasip1-clang` on `PATH`.
+
+The build prepares the patched LLVM source once in `build-llvm-source/`, then
+builds native `llvm-tblgen` and `clang-tblgen` helpers in
+`build-native-tools/` before configuring the Emscripten and WASI builds.
+
+If you switch Emscripten or wasi-sdk installations, remove the affected CMake
+build directory (`build/`, `build-wasi/`, or `build-native-tools/`) before
+rebuilding. Remove `build-llvm-source/` when you need to refresh the shared
+LLVM source cache.
