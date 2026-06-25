@@ -3,6 +3,11 @@ set -Eeuo pipefail
 
 cd "$(dirname "$0")/.."
 project_root=$(pwd)
+llvm_source_base="$project_root/build-llvm-source"
+llvm_source_dir="$llvm_source_base/llvm_project-src"
+llvm_source_build_dir="$llvm_source_base/llvm_project-build"
+llvm_source_subbuild_dir="$llvm_source_base/llvm_project-subbuild"
+native_tools_dir="$project_root/build-native-tools"
 
 is_under_path() {
     local path=$1
@@ -41,6 +46,15 @@ find_emsdk_path() {
     return 1
 }
 
+find_emcmake() {
+    if [[ -n "${EMSDK_PATH:-}" && -x "$EMSDK_PATH/upstream/emscripten/emcmake" ]]; then
+        printf '%s\n' "$EMSDK_PATH/upstream/emscripten/emcmake"
+        return 0
+    fi
+
+    command -v emcmake
+}
+
 find_host_tool() {
     local tool=$1
     local candidate dir
@@ -62,10 +76,81 @@ find_host_tool() {
     return 1
 }
 
-if [[ -z "${WASI_SDK_PATH:-}" ]]; then
-    echo "WASI_SDK_PATH must point to a wasi-sdk installation." >&2
+cmake_cache_value() {
+    local cache=$1
+    local key=$2
+
+    [[ -f "$cache" ]] || return 0
+    awk -F= -v key="$key" 'index($1, key ":") == 1 { print substr($0, index($0, "=") + 1); exit }' "$cache"
+}
+
+cmake_cache_path_outside() {
+    local cache=$1
+    local key=$2
+    local root=$3
+    local value
+
+    value=$(cmake_cache_value "$cache" "$key")
+    [[ -n "$value" ]] || return 1
+
+    ! is_under_path "$value" "$root"
+}
+
+cmake_cache_path_not_equal() {
+    local cache=$1
+    local key=$2
+    local expected=$3
+    local value
+
+    value=$(cmake_cache_value "$cache" "$key")
+    [[ -n "$value" && "$value" != "$expected" ]]
+}
+
+fail_stale_cache() {
+    local dir=$1
+    local reason=$2
+
+    echo "Stale CMake cache in $dir: $reason" >&2
+    echo "Remove it and rebuild: rm -rf $dir" >&2
+    exit 1
+}
+
+find_wasi_sdk_path() {
+    local candidate prefixed_clang
+
+    candidate="${WASI_SDK_PATH:-}"
+    if [[ -n "$candidate" && -f "$candidate/share/cmake/wasi-sdk-p1.cmake" ]]; then
+        candidate=$(cd "$candidate" && pwd)
+        printf '%s\n' "$candidate"
+        return 0
+    fi
+
+    prefixed_clang=$(command -v wasm32-wasip1-clang || true)
+    [[ -n "$prefixed_clang" ]] || return 1
+
+    candidate=$(cd "$(dirname "$prefixed_clang")/.." && pwd)
+    if [[ -f "$candidate/share/cmake/wasi-sdk-p1.cmake" ]]; then
+        printf '%s\n' "$candidate"
+        return 0
+    fi
+
+    return 1
+}
+
+EMSDK_PATH=""
+EMSDK_PATH=$(find_emsdk_path || true)
+if ! EMCMAKE=$(find_emcmake); then
+    echo "Emscripten is not active; emcmake was not found." >&2
+    echo "Activate emsdk before running scripts/build.sh." >&2
     exit 1
 fi
+
+if ! WASI_SDK_PATH=$(find_wasi_sdk_path); then
+    echo "WASI_SDK_PATH must point to a wasi-sdk installation." >&2
+    echo "Set WASI_SDK_PATH, or put wasm32-wasip1-clang on PATH." >&2
+    exit 1
+fi
+export WASI_SDK_PATH
 
 wasi_toolchain="$WASI_SDK_PATH/share/cmake/wasi-sdk-p1.cmake"
 if [[ ! -f "$wasi_toolchain" ]]; then
@@ -73,14 +158,6 @@ if [[ ! -f "$wasi_toolchain" ]]; then
     exit 1
 fi
 
-rm -rf pkg
-if [[ -d build-wasi/CMakeFiles ]] &&
-    grep -R -- '--target=wasm32-wasi ' build-wasi/CMakeFiles build-wasi/build.ninja >/dev/null 2>&1; then
-    rm -rf build-wasi
-fi
-mkdir -p pkg build build-wasi build-native-tools
-
-EMSDK_PATH=$(find_emsdk_path || true)
 HOST_CC=${CC_FOR_BUILD:-}
 HOST_CXX=${CXX_FOR_BUILD:-}
 if [[ -z "$HOST_CC" ]] && ! HOST_CC=$(find_host_tool clang); then
@@ -92,69 +169,89 @@ if [[ -z "$HOST_CXX" ]] && ! HOST_CXX=$(find_host_tool clang++); then
     exit 1
 fi
 
-emcmake cmake -S . -B build -G Ninja \
-    -DCLANG_FORMAT_BUILD_ESM=ON \
-    -DCLANG_FORMAT_BUILD_CLI=OFF
-cmake --build build --target clang-format-esm
-
-llvm_source_dir="$project_root/build/_deps/llvm_project-src"
-native_tools_dir="$project_root/build-native-tools"
-
-cmake -S "$llvm_source_dir/llvm" -B "$native_tools_dir" -G Ninja \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_C_COMPILER="$HOST_CC" \
-    -DCMAKE_CXX_COMPILER="$HOST_CXX" \
-    -DLLVM_ENABLE_PROJECTS=clang \
-    -DLLVM_TARGETS_TO_BUILD= \
-    -DLLVM_INCLUDE_TESTS=OFF \
-    -DLLVM_INCLUDE_BENCHMARKS=OFF \
-    -DLLVM_INCLUDE_EXAMPLES=OFF \
-    -DLLVM_ENABLE_BINDINGS=OFF \
-    -DLLVM_ENABLE_ZLIB=OFF \
-    -DLLVM_ENABLE_ZSTD=OFF \
-    -DLLVM_ENABLE_TERMINFO=OFF
-cmake --build "$native_tools_dir" --target llvm-tblgen clang-tblgen
-
-cmake -S . -B build-wasi -G Ninja \
-    -DCMAKE_TOOLCHAIN_FILE="$wasi_toolchain" \
-    -DCMAKE_C_COMPILER_TARGET=wasm32-wasip1 \
-    -DCMAKE_CXX_COMPILER_TARGET=wasm32-wasip1 \
-    -DCMAKE_ASM_COMPILER_TARGET=wasm32-wasip1 \
-    -DLLVM_NATIVE_TOOL_DIR="$native_tools_dir/bin" \
-    -DLLVM_TABLEGEN="$native_tools_dir/bin/llvm-tblgen" \
-    -DCLANG_TABLEGEN="$native_tools_dir/bin/clang-tblgen" \
-    -DLLVM_BUILD_TOOLS=OFF \
-    -DCLANG_BUILD_TOOLS=OFF \
-    -DLLVM_BUILD_UTILS=OFF \
-    -DLLVM_INCLUDE_BENCHMARKS=OFF \
-    -DLLVM_INCLUDE_EXAMPLES=OFF \
-    -DLLVM_INCLUDE_TESTS=OFF \
-    -DLLVM_ENABLE_BACKTRACES=OFF \
-    -DLLVM_ENABLE_CRASH_OVERRIDES=OFF \
-    -DLLVM_ENABLE_THREADS=OFF \
-    -DLLVM_ENABLE_ZLIB=OFF \
-    -DLLVM_ENABLE_ZSTD=OFF \
-    -DCLANG_FORMAT_BUILD_ESM=OFF \
-    -DCLANG_FORMAT_BUILD_CLI=ON
-cmake --build build-wasi --target clang-format-cli
-
-if [[ ! -z "${WASM_OPT:-}" ]]; then
-    wasm-opt --enable-bulk-memory --enable-nontrapping-float-to-int -Os build/clang-format-esm.wasm -o build/clang-format-esm-Os.wasm
-    wasm-opt --enable-bulk-memory --enable-nontrapping-float-to-int -Oz build/clang-format-esm.wasm -o build/clang-format-esm-Oz.wasm
+if [[ -n "$EMSDK_PATH" && -f build/CMakeCache.txt ]]; then
+    for key in \
+        CMAKE_TOOLCHAIN_FILE \
+        CMAKE_ASM_COMPILER \
+        CMAKE_C_COMPILER \
+        CMAKE_CXX_COMPILER \
+        CMAKE_CROSSCOMPILING_EMULATOR \
+        CMAKE_INSTALL_PREFIX; do
+        if cmake_cache_path_outside build/CMakeCache.txt "$key" "$EMSDK_PATH"; then
+            fail_stale_cache build "$key points outside current emsdk"
+        fi
+    done
+fi
+if [[ -f build/CMakeCache.txt ]]; then
+    value=$(cmake_cache_value build/CMakeCache.txt CLANG_FORMAT_LLVM_SOURCE_DIR)
+    if [[ "$value" != "$llvm_source_dir" ]]; then
+        fail_stale_cache build "CLANG_FORMAT_LLVM_SOURCE_DIR points at a different LLVM source directory"
+    fi
 fi
 
-SMALLEST_WASM=$(ls -Sr build/clang-format-e*.wasm | head -n 1)
+if [[ -f build-native-tools/CMakeCache.txt ]]; then
+    if cmake_cache_path_not_equal build-native-tools/CMakeCache.txt CMAKE_HOME_DIRECTORY "$llvm_source_dir/llvm"; then
+        fail_stale_cache build-native-tools "native tools point at a different LLVM source directory"
+    fi
 
-cp "$SMALLEST_WASM" pkg/clang-format.wasm
-node scripts/esm_patch.mjs build/clang-format-esm.js pkg/clang-format.js
+    for key in CMAKE_C_COMPILER CMAKE_CXX_COMPILER CMAKE_ASM_COMPILER; do
+        value=$(cmake_cache_value build-native-tools/CMakeCache.txt "$key")
+        [[ -n "$value" ]] || continue
+        if is_under_path "$value" "${EMSDK_PATH:-}" "${WASI_SDK_PATH:-}"; then
+            fail_stale_cache build-native-tools "$key points at emsdk or wasi-sdk"
+        fi
+    done
+fi
 
-cp -LR ./extra/. ./pkg/
-cp ./build-wasi/clang-format-cli.wasm ./pkg/
-cp ./package.json ./README.md ./LICENSE ./jsr.jsonc ./pkg/
-node ./pkg/clang-format-cli.cjs --style=file:./scripts/.clang-format -i ./pkg/*.{js,cjs,ts}
+if [[ -d build-wasi/CMakeFiles ]] &&
+    grep -R -- '--target=wasm32-wasi ' build-wasi/CMakeFiles build-wasi/build.ninja >/dev/null 2>&1; then
+    fail_stale_cache build-wasi "legacy wasm32-wasi target was cached"
+fi
 
-# copy git-clang-format and clang-format-diff.py
-cp ./build/_deps/llvm_project-src/clang/tools/clang-format/git-clang-format ./pkg/
-cp ./build/_deps/llvm_project-src/clang/tools/clang-format/clang-format-diff.py ./pkg/
+if [[ -f build-wasi/CMakeCache.txt ]]; then
+    for key in \
+        CMAKE_TOOLCHAIN_FILE \
+        CMAKE_C_COMPILER \
+        CMAKE_CXX_COMPILER \
+        CMAKE_ASM_COMPILER \
+        CMAKE_AR \
+        CMAKE_RANLIB; do
+        if cmake_cache_path_outside build-wasi/CMakeCache.txt "$key" "$WASI_SDK_PATH"; then
+            fail_stale_cache build-wasi "$key points outside current wasi-sdk"
+        fi
+    done
+fi
+if [[ -f build-wasi/CMakeCache.txt ]]; then
+    value=$(cmake_cache_value build-wasi/CMakeCache.txt CLANG_FORMAT_LLVM_SOURCE_DIR)
+    if [[ "$value" != "$llvm_source_dir" ]]; then
+        fail_stale_cache build-wasi "CLANG_FORMAT_LLVM_SOURCE_DIR points at a different LLVM source directory"
+    fi
+fi
+mkdir -p "$llvm_source_base"
 
-ls -lh ./pkg
+cmake \
+    -DCLANG_FORMAT_LLVM_SOURCE_DIR="$llvm_source_dir" \
+    -DCLANG_FORMAT_LLVM_BINARY_DIR="$llvm_source_build_dir" \
+    -DCLANG_FORMAT_LLVM_SUBBUILD_DIR="$llvm_source_subbuild_dir" \
+    -P cmake/PrepareLLVMSource.cmake
+
+cmake -S "$llvm_source_dir/llvm" -B "$native_tools_dir" -G Ninja \
+    -C "$project_root/cmake/NativeToolsCache.cmake" \
+    -DCMAKE_C_COMPILER="$HOST_CC" \
+    -DCMAKE_CXX_COMPILER="$HOST_CXX"
+cmake --build "$native_tools_dir" --target llvm-tblgen clang-tblgen
+
+(
+    if [[ ! -x "$EMCMAKE" ]]; then
+        echo "Emscripten is not active; emcmake was not found." >&2
+        exit 1
+    fi
+
+    "$EMCMAKE" cmake --preset clang-format-esm
+    cmake --build --preset clang-format-esm
+)
+
+cmake --preset clang-format-wasi
+cmake --build --preset clang-format-wasi
+
+bash scripts/package.sh "$llvm_source_dir"

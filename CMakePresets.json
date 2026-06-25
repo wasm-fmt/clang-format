@@ -1,0 +1,55 @@
+{
+  "version": 5,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 24,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "clang-format-esm",
+      "displayName": "clang-format Emscripten API",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CLANG_FORMAT_LLVM_SOURCE_DIR": "${sourceDir}/build-llvm-source/llvm_project-src",
+        "LLVM_NATIVE_TOOL_DIR": "${sourceDir}/build-native-tools/bin",
+        "LLVM_TABLEGEN": "${sourceDir}/build-native-tools/bin/llvm-tblgen",
+        "CLANG_TABLEGEN": "${sourceDir}/build-native-tools/bin/clang-tblgen",
+        "CLANG_FORMAT_BUILD_ESM": "ON",
+        "CLANG_FORMAT_BUILD_CLI": "OFF"
+      }
+    },
+    {
+      "name": "clang-format-wasi",
+      "displayName": "clang-format WASI CLI",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-wasi",
+      "toolchainFile": "$env{WASI_SDK_PATH}/share/cmake/wasi-sdk-p1.cmake",
+      "cacheVariables": {
+        "CLANG_FORMAT_LLVM_SOURCE_DIR": "${sourceDir}/build-llvm-source/llvm_project-src",
+        "LLVM_NATIVE_TOOL_DIR": "${sourceDir}/build-native-tools/bin",
+        "LLVM_TABLEGEN": "${sourceDir}/build-native-tools/bin/llvm-tblgen",
+        "CLANG_TABLEGEN": "${sourceDir}/build-native-tools/bin/clang-tblgen",
+        "CLANG_FORMAT_BUILD_ESM": "OFF",
+        "CLANG_FORMAT_BUILD_CLI": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "clang-format-esm",
+      "configurePreset": "clang-format-esm",
+      "targets": [
+        "clang-format-esm"
+      ]
+    },
+    {
+      "name": "clang-format-wasi",
+      "configurePreset": "clang-format-wasi",
+      "targets": [
+        "clang-format-cli"
+      ]
+    }
+  ]
+}
