@@ -116,22 +116,34 @@ This package is a WebAssembly build of Clang-Format, with a JavaScript wrapper.
 # Build from source
 
 1. Install [LLVM](https://llvm.org/docs/GettingStarted.html) and [Clang](https://clang.llvm.org/get_started.html) (version 18 or later).
-2. Install CMake, Ninja, Node.js, and `wasm-tools`.
+2. Install [mise](https://mise.jdx.dev/).
 3. Clone this repository.
-4. Install and activate Emscripten 4.0.23.
-5. Install wasi-sdk 33.
-6. Run `./scripts/build.sh`.
+4. Run `mise install`.
+5. Run `mise run build`.
 
 For example:
 
 ```sh
-export WASI_SDK_PATH=/path/to/wasi-sdk
-./scripts/build.sh
+mise install
+mise run build
 ```
 
-The build script consumes the prepared environment; it does not install or
-activate toolchains itself. Set `WASI_SDK_PATH` to the directory containing
-`share/cmake/wasi-sdk-p1.cmake`, or put `wasm32-wasip1-clang` on `PATH`.
+Set `WASM_OPT=1` when you want the build to run `wasm-tools strip` and
+Binaryen `wasm-opt` on the Emscripten module and the WASI CLI module:
+
+```sh
+WASM_OPT=1 mise run build
+```
+
+`mise.toml` manages Node.js, CMake, Ninja, Deno, Bun, Wasmtime, `wasm-tools`,
+and `wasi-sdk` 33. On macOS and Linux, `mise.unix.toml` also installs
+Emscripten 4.0.23 through the `mise-emsdk` asdf plugin. On Windows, prepare and
+activate Emscripten manually before running the build. If you do not use mise,
+install and activate Emscripten manually, install `wasi-sdk` manually, and
+either set `WASI_SDK_PATH` to the directory containing
+`share/cmake/wasi-sdk-p1.cmake` or put `wasm32-wasip1-clang` on `PATH`. Install
+`wasm-tools` too when using `WASM_OPT=1`. The build script consumes the prepared
+environment; it does not invoke mise itself.
 
 The build prepares the patched LLVM source once in `build-llvm-source/`, then
 builds native `llvm-tblgen` and `clang-tblgen` helpers in

@@ -141,7 +141,7 @@ EMSDK_PATH=""
 EMSDK_PATH=$(find_emsdk_path || true)
 if ! EMCMAKE=$(find_emcmake); then
     echo "Emscripten is not active; emcmake was not found." >&2
-    echo "Activate emsdk before running scripts/build.sh." >&2
+    echo "Run 'mise run build', or activate emsdk manually before running scripts/build.sh." >&2
     exit 1
 fi
 
