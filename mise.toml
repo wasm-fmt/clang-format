@@ -1,0 +1,57 @@
+[tools]
+node = "24.16.0"
+deno = "2"
+bun = "1"
+cmake = "3.31.8"
+ninja = "1.13.2"
+wasmtime = "latest"
+"aqua:bytecodealliance/wasm-tools" = "1.252.0"
+"github:WebAssembly/wasi-sdk" = { version = "33", version_prefix = "wasi-sdk-", matching_regex = '^wasi-sdk-.*-(x86_64|arm64)-(linux|macos|windows)\.tar\.gz$' }
+
+[tasks.build]
+description = "Build the Emscripten API and WASI CLI artifacts"
+run = "./scripts/build.sh"
+
+[tasks."check:llvm-patches"]
+description = "Check whether the pinned LLVM PR patch moved upstream"
+run = "npm run check:llvm-patches"
+
+[tasks."test:node"]
+description = "Run Node.js tests"
+run = 'node --test "test_node/*.mjs"'
+
+[tasks."test:cli"]
+description = "Run npm CLI formatting regression"
+run = [
+    "node pkg/clang-format-cli.cjs -i test_data_cli/*.cc",
+    "git diff --exit-code -- test_data_cli",
+]
+
+[tasks."test:wasi"]
+description = "Smoke-test the raw WASI CLI"
+run = "wasmtime --dir=. pkg/clang-format-cli.wasm --version"
+
+[tasks."test:deno"]
+description = "Run Deno tests"
+run = "deno test --allow-read --parallel test_deno/deno.test.ts"
+
+[tasks."test:bun"]
+description = "Run Bun tests"
+run = "bun test test_bun/bun.spec.ts --timeout 10000"
+
+[tasks.test]
+description = "Run all tests against the built package"
+run = [
+    "mise run test:node",
+    "mise run test:cli",
+    "mise run test:wasi",
+    "mise run test:deno",
+    "mise run test:bun",
+]
+
+[tasks.ci]
+description = "Build and test the package"
+run = [
+    "mise run build",
+    "mise run test",
+]

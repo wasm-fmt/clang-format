@@ -20,7 +20,7 @@ fi
 
 if ! command -v wasm-tools >/dev/null 2>&1; then
     echo "wasm-tools is required to strip the WASI CLI wasm." >&2
-    echo "Install wasm-tools before running scripts/package.sh." >&2
+    echo "Run 'mise install', or install wasm-tools manually." >&2
     exit 1
 fi
 

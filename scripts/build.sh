@@ -141,7 +141,7 @@ EMSDK_PATH=""
 EMSDK_PATH=$(find_emsdk_path || true)
 if ! EMCMAKE=$(find_emcmake); then
     echo "Emscripten is not active; emcmake was not found." >&2
-    echo "Activate emsdk before running scripts/build.sh." >&2
+    echo "Run 'mise run build', or activate emsdk manually before running scripts/build.sh." >&2
     exit 1
 fi
 
@@ -259,7 +259,7 @@ cmake --build --preset clang-format-wasi
 if [[ -n "${WASM_OPT:-}" ]]; then
     if ! WASM_OPT_BIN=$(command -v wasm-opt); then
         echo "WASM_OPT=1 requires wasm-opt." >&2
-        echo "Install Binaryen or activate emsdk before running scripts/build.sh." >&2
+        echo "Run 'mise install', or activate emsdk before running scripts/build.sh." >&2
         exit 1
     fi
 
