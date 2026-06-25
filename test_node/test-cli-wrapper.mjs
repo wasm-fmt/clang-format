@@ -3,12 +3,14 @@ import {createRequire} from "node:module";
 import test from "node:test";
 
 const require = createRequire(import.meta.url);
-const { translateArgv, translateFileListContent } = require(
-    "../extra/clang-format-cli.cjs",
-);
+const {
+    createRunConfig,
+    translateWindowsArgv,
+    translateWindowsFileListContent,
+} = require("../extra/clang-format-cli.cjs");
 
 test("Windows absolute file args map to guest POSIX drive paths", () => {
-    const result = translateArgv(["C:\\repo\\src\\a.cc"], {
+    const result = translateWindowsArgv(["C:\\repo\\src\\a.cc"], {
         cwd: "C:\\repo",
         platform: "win32",
         translateFileLists: false,
@@ -21,21 +23,36 @@ test("Windows absolute file args map to guest POSIX drive paths", () => {
 });
 
 test("Windows relative file args map through the current drive preopen", () => {
-    const result = translateArgv(["src\\a.cc", "--", "-literal\\name.cc"], {
-        cwd: "C:\\repo",
-        platform: "win32",
-        translateFileLists: false,
-    });
+    const result = translateWindowsArgv(
+        ["src\\a.cc", "\\rooted\\b.cc", "--", "-literal\\name.cc"],
+        {
+            cwd: "C:\\repo",
+            platform: "win32",
+            translateFileLists: false,
+        },
+    );
 
     assert.deepEqual(result.argv, [
         "/__wasi_drive_c/repo/src/a.cc",
+        "/__wasi_drive_c/rooted/b.cc",
         "--",
         "/__wasi_drive_c/repo/-literal/name.cc",
     ]);
 });
 
+test("Windows UNC file args get their own guest preopen", () => {
+    const result = translateWindowsArgv(["\\\\server\\share\\dir\\a.cc"], {
+        cwd: "C:\\repo",
+        platform: "win32",
+        translateFileLists: false,
+    });
+
+    assert.deepEqual(result.argv, ["/__wasi_unc/server/share/dir/a.cc"]);
+    assert.equal(result.preopens["/__wasi_unc/server/share"], "\\\\server\\share\\");
+});
+
 test("Windows style, assume-filename, and files options translate path values", () => {
-    const result = translateArgv(
+    const result = translateWindowsArgv(
         [
             "--style=file:C:\\repo\\.clang-format",
             "--assume-filename",
@@ -58,15 +75,14 @@ test("Windows style, assume-filename, and files options translate path values", 
 });
 
 test("Windows file list content is converted to guest paths", () => {
-    const result = translateArgv([], {
+    const result = translateWindowsArgv([], {
         cwd: "C:\\repo",
         platform: "win32",
         translateFileLists: false,
     });
 
     assert.equal(
-        translateFileListContent("C:\\repo\\a.cc\nrelative\\b.cc\n\n", {
-            isWindows: true,
+        translateWindowsFileListContent("C:\\repo\\a.cc\nrelative\\b.cc\n\n", {
             hostCwd: "C:\\repo",
             preopens: result.preopens,
         }),
@@ -74,22 +90,23 @@ test("Windows file list content is converted to guest paths", () => {
     );
 });
 
-test("POSIX relative paths become absolute guest paths", () => {
-    const result = translateArgv(
-        ["--style=file:.clang-format", "src/a.cc", "--files=files.txt"],
+test("POSIX run config is a thin WASI startup", () => {
+    const argv = [
+        "--style=file:../.clang-format",
+        "src/a.cc",
+        "--files=files.txt",
+        "@args.txt",
+    ];
+    const result = createRunConfig(
+        argv,
         {
-            cwd: "/repo",
+            cwd: "/repo/sub",
             platform: "linux",
-            translateFileLists: false,
         },
     );
 
-    assert.deepEqual(result.argv, [
-        "--style=file:/repo/.clang-format",
-        "/repo/src/a.cc",
-        "--files=/repo/files.txt",
-    ]);
-    assert.equal(result.preopens["."], "/repo");
-    assert.equal(result.preopens["/"], "/");
-    assert.equal(result.pwd, "/repo");
+    assert.deepEqual(result.argv, argv);
+    assert.deepEqual(result.cleanupPaths, []);
+    assert.deepEqual(result.preopens, { "/": "/" });
+    assert.equal(result.pwd, "/repo/sub");
 });

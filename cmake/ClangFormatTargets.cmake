@@ -28,6 +28,7 @@ endif()
 if(CLANG_FORMAT_BUILD_CLI)
     add_executable(clang-format-cli
         "${llvm_project_SOURCE_DIR}/clang/tools/clang-format/ClangFormat.cpp"
+        src/wasi-cwd.c
     )
     add_dependencies(clang-format-wasm clang-format-cli)
     set_target_properties(clang-format-cli PROPERTIES SUFFIX ".wasm")
