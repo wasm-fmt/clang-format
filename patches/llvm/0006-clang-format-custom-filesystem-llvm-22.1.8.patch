@@ -1,0 +1,87 @@
+diff --git a/clang/tools/clang-format/ClangFormat.cpp b/clang/tools/clang-format/ClangFormat.cpp
+--- a/clang/tools/clang-format/ClangFormat.cpp
++++ b/clang/tools/clang-format/ClangFormat.cpp
+@@ -27,7 +27,14 @@
+ #include "llvm/Support/Process.h"
+ #include <fstream>
+ 
++#include "CustomFileSystem.h"
++
+ using namespace llvm;
+ using clang::tooling::Replacements;
+ 
++static IntrusiveRefCntPtr<vfs::FileSystem> createClangFormatFileSystem() {
++  return IntrusiveRefCntPtr<vfs::FileSystem>(
++      new vfs::CustomFileSystem(vfs::getRealFileSystem()));
++}
++
+ static cl::opt<bool> Help("h", cl::desc("Alias for -help"), cl::Hidden);
+@@ -443,9 +450,10 @@ static bool format(StringRef FileName, bool ErrorOnIncompleteFormat = false) {
+     return true;
+   }
+ 
++  auto CustomFS = createClangFormatFileSystem();
+   Expected<FormatStyle> FormatStyle =
+       getStyle(Style, AssumedFileName, FallbackStyle, Code->getBuffer(),
+-               nullptr, WNoErrorList.isSet(WNoError::Unknown));
++               CustomFS.get(), WNoErrorList.isSet(WNoError::Unknown));
+   if (!FormatStyle) {
+     llvm::errs() << toString(FormatStyle.takeError()) << "\n";
+     return true;
+@@ -564,10 +572,13 @@ static int dumpConfig() {
+     }
+     Code = std::move(CodeOrErr.get());
+   }
++
++  auto CustomFS = createClangFormatFileSystem();
++
+   Expected<clang::format::FormatStyle> FormatStyle = clang::format::getStyle(
+       Style,
+       FileNames.empty() || FileNames[0] == "-" ? AssumeFileName : FileNames[0],
+-      FallbackStyle, Code ? Code->getBuffer() : "");
++      FallbackStyle, Code ? Code->getBuffer() : "", CustomFS.get());
+   if (!FormatStyle) {
+     llvm::errs() << toString(FormatStyle.takeError()) << "\n";
+     return 1;
+@@ -600,24 +610,26 @@ static bool isIgnored(StringRef FilePath) {
+   String Path;
+   String AbsPath{FilePath};
+ 
++  auto PathStyle = vfs::getPathStyle();
++
+   using namespace llvm::sys::path;
+-  make_absolute(AbsPath);
+-  remove_dots(AbsPath, /*remove_dot_dot=*/true);
++  vfs::make_absolute(AbsPath);
++  remove_dots(AbsPath, /*remove_dot_dot=*/true, PathStyle);
+ 
+-  if (StringRef Dir{parent_path(AbsPath)}; PrevDir != Dir) {
++  if (StringRef Dir{parent_path(AbsPath, PathStyle)}; PrevDir != Dir) {
+     PrevDir = Dir;
+ 
+     for (;;) {
+       Path = Dir;
+-      append(Path, ".clang-format-ignore");
++      append(Path, PathStyle, ".clang-format-ignore");
+       if (is_regular_file(Path))
+         break;
+-      Dir = parent_path(Dir);
++      Dir = parent_path(Dir, PathStyle);
+       if (Dir.empty())
+         return false;
+     }
+ 
+-    IgnoreDir = convert_to_slash(Dir);
++    IgnoreDir = convert_to_slash(Dir, PathStyle);
+ 
+     std::ifstream IgnoreFile{Path.c_str()};
+     if (!IgnoreFile.good())
+@@ -637,7 +649,7 @@ static bool isIgnored(StringRef FilePath) {
+   if (IgnoreDir.empty())
+     return false;
+ 
+-  const auto Pathname{convert_to_slash(AbsPath)};
++  const auto Pathname{convert_to_slash(AbsPath, PathStyle)};
+   for (const auto &Pat : Patterns) {
+     const bool IsNegated = Pat[0] == '!';
+     StringRef Pattern{Pat};
