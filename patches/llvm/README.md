@@ -56,3 +56,10 @@ Local WASI build fix for LLVM `22.1.8`. The WASI sysroot declares
 `posix_madvise()` in its emulated `sys/mman.h`, but wasi-sdk 33 does not provide
 the symbol at link time. WASI builds treat `mapped_file_region::willNeedImpl()`
 as a no-op, matching the existing `dontNeedImpl()` handling.
+
+## `0006-clang-format-custom-filesystem-llvm-22.1.8.patch`
+
+Local clang-format CLI patch for LLVM `22.1.8`. The CLI passes style lookup and
+`.clang-format-ignore` path handling through the package's `CustomFileSystem`,
+so the WASI build can select POSIX or Windows path rules from the Node wrapper's
+`PLATFORM` environment value without maintaining a copied `ClangFormat.cpp`.

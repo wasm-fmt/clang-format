@@ -28,15 +28,26 @@ endif()
 if(CLANG_FORMAT_BUILD_CLI)
     add_executable(clang-format-cli
         "${llvm_project_SOURCE_DIR}/clang/tools/clang-format/ClangFormat.cpp"
+        src/CustomFileSystem.cc
         src/wasi-cwd.c
+        src/wasi-path.cc
     )
     add_dependencies(clang-format-wasm clang-format-cli)
     set_target_properties(clang-format-cli PROPERTIES SUFFIX ".wasm")
-    target_include_directories(clang-format-cli PRIVATE ${CLANG_FORMAT_LLVM_INCLUDE_DIRS})
+    target_include_directories(clang-format-cli PRIVATE
+        ${CLANG_FORMAT_LLVM_INCLUDE_DIRS}
+        "${CMAKE_CURRENT_SOURCE_DIR}/src"
+    )
     target_compile_features(clang-format-cli PRIVATE cxx_std_17)
     target_compile_options(clang-format-cli PRIVATE -Os)
     target_link_libraries(clang-format-cli PRIVATE
         ${CLANG_FORMAT_LLVM_LIBRARIES}
         "-fno-rtti"
     )
+    if(CMAKE_SYSTEM_NAME STREQUAL "WASI")
+        target_link_libraries(clang-format-cli PRIVATE
+            "-Wl,--wrap=__wasilibc_find_relpath"
+            "-Wl,--wrap=__wasilibc_find_relpath_alloc"
+        )
+    endif()
 endif()
