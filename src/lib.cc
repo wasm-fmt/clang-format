@@ -41,8 +41,9 @@ static auto fillRanges(MemoryBuffer *Code, std::vector<tooling::Range> &Ranges)
 
 static auto isPredefinedStyle(StringRef style) -> bool {
   return StringSwitch<bool>(style.lower())
-      .Cases("llvm", "chromium", "mozilla", "google", "webkit", "gnu",
-             "microsoft", "none", "file", true)
+      .Cases({"llvm", "chromium", "mozilla", "google", "webkit", "gnu",
+              "microsoft", "none", "file"},
+             true)
       .Default(false);
 }
 

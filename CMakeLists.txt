@@ -9,6 +9,8 @@ set(LLVM_TARGETS_TO_BUILD "" CACHE STRING "LLVM target architectures")
 set(LLVM_ENABLE_PROJECTS clang CACHE STRING "LLVM projects to build")
 
 # LLVM feature toggles
+# Build static components only; Emscripten cannot build LLVM's shared libraries.
+set(LLVM_ENABLE_PIC OFF CACHE BOOL "Position-independent code and shared libraries")
 set(LLVM_ENABLE_BACKTRACES OFF CACHE BOOL "Backtrace support")
 set(LLVM_ENABLE_CRASH_OVERRIDES OFF CACHE BOOL "Crash overrides")
 set(LLVM_ENABLE_TERMINFO OFF CACHE BOOL "Terminfo support")
