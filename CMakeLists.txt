@@ -9,6 +9,8 @@ set(LLVM_TARGETS_TO_BUILD "" CACHE STRING "LLVM target architectures")
 set(LLVM_ENABLE_PROJECTS clang CACHE STRING "LLVM projects to build")
 
 # LLVM feature toggles
+# Build static components only; Emscripten cannot build LLVM's shared libraries.
+set(LLVM_ENABLE_PIC OFF CACHE BOOL "Position-independent code and shared libraries")
 set(LLVM_ENABLE_BACKTRACES OFF CACHE BOOL "Backtrace support")
 set(LLVM_ENABLE_CRASH_OVERRIDES OFF CACHE BOOL "Crash overrides")
 set(LLVM_ENABLE_TERMINFO OFF CACHE BOOL "Terminfo support")
@@ -36,11 +38,11 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "MinSizeRel")
 endif()
 
-set(LLVM_VERSION "22.1.8")
+set(LLVM_VERSION "23.1.0")
 
 FetchContent_Declare(llvm_project
     URL "https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/llvm-project-${LLVM_VERSION}.src.tar.xz"
-    URL_HASH SHA256=922f1817a0df7b1489272d18134ee0087a8b068828f87ac63b9861b1a9965888
+    URL_HASH SHA256=ab1f0e3ec52448c33e8782eaf0422504b87c7b016b22514653ee0d8fcee479ff
     TLS_VERIFY TRUE
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )

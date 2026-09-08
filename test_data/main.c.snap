@@ -12353,27 +12353,29 @@ js_unary_arith_slow(JSContext *ctx, JSValue *sp, OPCodeEnum op) {
       goto exception;
     break;
   default:
-  handle_float64: {
-    double d;
-    if (is_math_mode(ctx))
-      goto handle_bigint;
-    d = JS_VALUE_GET_FLOAT64(op1);
-    switch (op) {
-    case OP_inc:
-    case OP_dec:
-      v = 2 * (op - OP_dec) - 1;
-      d += v;
-      break;
-    case OP_plus:
-      break;
-    case OP_neg:
-      d = -d;
-      break;
-    default:
-      abort();
+  handle_float64:
+    {
+      double d;
+      if (is_math_mode(ctx))
+        goto handle_bigint;
+      d = JS_VALUE_GET_FLOAT64(op1);
+      switch (op) {
+      case OP_inc:
+      case OP_dec:
+        v = 2 * (op - OP_dec) - 1;
+        d += v;
+        break;
+      case OP_plus:
+        break;
+      case OP_neg:
+        d = -d;
+        break;
+      default:
+        abort();
+      }
+      sp[-1] = __JS_NewFloat64(ctx, d);
     }
-    sp[-1] = __JS_NewFloat64(ctx, d);
-  } break;
+    break;
   }
   return 0;
 exception:
@@ -19363,11 +19365,13 @@ static void __attribute((unused)) dump_token(JSParseState *s,
     printf("number: %.14g\n", d);
   } break;
   case TOK_IDENT:
-  dump_atom: {
-    char buf[ATOM_GET_STR_BUF_SIZE];
-    printf("ident: '%s'\n",
-           JS_AtomGetStr(s->ctx, buf, sizeof(buf), token->u.ident.atom));
-  } break;
+  dump_atom:
+    {
+      char buf[ATOM_GET_STR_BUF_SIZE];
+      printf("ident: '%s'\n",
+             JS_AtomGetStr(s->ctx, buf, sizeof(buf), token->u.ident.atom));
+    }
+    break;
   case TOK_STRING: {
     const char *str;
     /* XXX: quote the string */
@@ -20096,40 +20100,42 @@ redo:
   case '8':
   case '9':
     /* number */
-  parse_number: {
-    JSValue ret;
-    const uint8_t *p1;
-    int flags, radix;
-    flags = ATOD_ACCEPT_BIN_OCT | ATOD_ACCEPT_LEGACY_OCTAL |
-            ATOD_ACCEPT_UNDERSCORES;
+  parse_number:
+    {
+      JSValue ret;
+      const uint8_t *p1;
+      int flags, radix;
+      flags = ATOD_ACCEPT_BIN_OCT | ATOD_ACCEPT_LEGACY_OCTAL |
+              ATOD_ACCEPT_UNDERSCORES;
 #ifdef CONFIG_BIGNUM
-    flags |= ATOD_ACCEPT_SUFFIX;
-    if (s->cur_func->js_mode & JS_MODE_MATH) {
-      flags |= ATOD_MODE_BIGINT;
-      if (s->cur_func->js_mode & JS_MODE_MATH)
-        flags |= ATOD_TYPE_BIG_FLOAT;
-    }
+      flags |= ATOD_ACCEPT_SUFFIX;
+      if (s->cur_func->js_mode & JS_MODE_MATH) {
+        flags |= ATOD_MODE_BIGINT;
+        if (s->cur_func->js_mode & JS_MODE_MATH)
+          flags |= ATOD_TYPE_BIG_FLOAT;
+      }
 #endif
-    radix = 0;
+      radix = 0;
 #ifdef CONFIG_BIGNUM
-    s->token.u.num.exponent = 0;
-    ret = js_atof2(s->ctx, (const char *)p, (const char **)&p, radix, flags,
-                   &s->token.u.num.exponent);
+      s->token.u.num.exponent = 0;
+      ret = js_atof2(s->ctx, (const char *)p, (const char **)&p, radix, flags,
+                     &s->token.u.num.exponent);
 #else
-    ret = js_atof(s->ctx, (const char *)p, (const char **)&p, radix, flags);
+      ret = js_atof(s->ctx, (const char *)p, (const char **)&p, radix, flags);
 #endif
-    if (JS_IsException(ret))
-      goto fail;
-    /* reject `10instanceof Number` */
-    if (JS_VALUE_IS_NAN(ret) ||
-        lre_js_is_ident_next(unicode_from_utf8(p, UTF8_CHAR_LEN_MAX, &p1))) {
-      JS_FreeValue(s->ctx, ret);
-      js_parse_error(s, "invalid number literal");
-      goto fail;
+      if (JS_IsException(ret))
+        goto fail;
+      /* reject `10instanceof Number` */
+      if (JS_VALUE_IS_NAN(ret) ||
+          lre_js_is_ident_next(unicode_from_utf8(p, UTF8_CHAR_LEN_MAX, &p1))) {
+        JS_FreeValue(s->ctx, ret);
+        js_parse_error(s, "invalid number literal");
+        goto fail;
+      }
+      s->token.val = TOK_NUMBER;
+      s->token.u.num.val = ret;
     }
-    s->token.val = TOK_NUMBER;
-    s->token.u.num.val = ret;
-  } break;
+    break;
   case '*':
     if (p[1] == '=') {
       p += 2;
@@ -20607,22 +20613,24 @@ redo:
   case '8':
   case '9':
     /* number */
-  parse_number: {
-    JSValue ret;
-    int flags, radix;
-    if (!s->ext_json) {
-      flags = 0;
-      radix = 10;
-    } else {
-      flags = ATOD_ACCEPT_BIN_OCT;
-      radix = 0;
+  parse_number:
+    {
+      JSValue ret;
+      int flags, radix;
+      if (!s->ext_json) {
+        flags = 0;
+        radix = 10;
+      } else {
+        flags = ATOD_ACCEPT_BIN_OCT;
+        radix = 0;
+      }
+      ret = js_atof(s->ctx, (const char *)p, (const char **)&p, radix, flags);
+      if (JS_IsException(ret))
+        goto fail;
+      s->token.val = TOK_NUMBER;
+      s->token.u.num.val = ret;
     }
-    ret = js_atof(s->ctx, (const char *)p, (const char **)&p, radix, flags);
-    if (JS_IsException(ret))
-      goto fail;
-    s->token.val = TOK_NUMBER;
-    s->token.u.num.val = ret;
-  } break;
+    break;
   default:
     if (c >= 128) {
       js_parse_error(s, "unexpected character");
@@ -23550,37 +23558,39 @@ static __exception int js_parse_postfix_expr(JSParseState *s, int parse_flags) {
     goto parse_regexp;
   case '/':
     s->buf_ptr--;
-  parse_regexp: {
-    JSValue str;
-    int ret, backtrace_flags;
-    if (!s->ctx->compile_regexp)
-      return js_parse_error(s, "RegExp are not supported");
-    /* the previous token is '/' or '/=', so no need to free */
-    if (js_parse_regexp(s))
-      return -1;
-    ret = emit_push_const(s, s->token.u.regexp.body, 0);
-    str = s->ctx->compile_regexp(s->ctx, s->token.u.regexp.body,
-                                 s->token.u.regexp.flags);
-    if (JS_IsException(str)) {
-      /* add the line number info */
-      backtrace_flags = 0;
-      if (s->cur_func && s->cur_func->backtrace_barrier)
-        backtrace_flags = JS_BACKTRACE_FLAG_SINGLE_LEVEL;
-      build_backtrace(s->ctx, s->ctx->rt->current_exception, s->filename,
-                      s->token.line_num, backtrace_flags);
-      return -1;
+  parse_regexp:
+    {
+      JSValue str;
+      int ret, backtrace_flags;
+      if (!s->ctx->compile_regexp)
+        return js_parse_error(s, "RegExp are not supported");
+      /* the previous token is '/' or '/=', so no need to free */
+      if (js_parse_regexp(s))
+        return -1;
+      ret = emit_push_const(s, s->token.u.regexp.body, 0);
+      str = s->ctx->compile_regexp(s->ctx, s->token.u.regexp.body,
+                                   s->token.u.regexp.flags);
+      if (JS_IsException(str)) {
+        /* add the line number info */
+        backtrace_flags = 0;
+        if (s->cur_func && s->cur_func->backtrace_barrier)
+          backtrace_flags = JS_BACKTRACE_FLAG_SINGLE_LEVEL;
+        build_backtrace(s->ctx, s->ctx->rt->current_exception, s->filename,
+                        s->token.line_num, backtrace_flags);
+        return -1;
+      }
+      ret = emit_push_const(s, str, 0);
+      JS_FreeValue(s->ctx, str);
+      if (ret)
+        return -1;
+      /* we use a specific opcode to be sure the correct
+         function is called (otherwise the bytecode would have
+         to be verified by the RegExp constructor) */
+      emit_op(s, OP_regexp);
+      if (next_token(s))
+        return -1;
     }
-    ret = emit_push_const(s, str, 0);
-    JS_FreeValue(s->ctx, str);
-    if (ret)
-      return -1;
-    /* we use a specific opcode to be sure the correct
-       function is called (otherwise the bytecode would have
-       to be verified by the RegExp constructor) */
-    emit_op(s, OP_regexp);
-    if (next_token(s))
-      return -1;
-  } break;
+    break;
   case '(':
     if ((parse_flags & PF_ARROW_FUNC) &&
         js_parse_skip_parens_token(s, NULL, TRUE) == TOK_ARROW) {
