@@ -16,41 +16,62 @@ jobs:
 
             - name: Check latest LLVM version
               id: check-version
+              shell: bash
               run: |
-                  # Get the latest LLVM version
-                  LATEST_VERSION=$(curl -s https://api.github.com/repos/llvm/llvm-project/releases/latest | jq -r '.tag_name' | sed 's/llvmorg-//')
-                  CURRENT_VERSION=$(grep -Po 'set\(LLVM_VERSION "(.*)"\)' CMakeLists.txt | grep -Po '".*"' | tr -d '"')
-
-                  echo "Latest LLVM version: $LATEST_VERSION"
-                  echo "Current LLVM version: $CURRENT_VERSION"
-
-                  # Set output variables
-                  echo "latest_version=$LATEST_VERSION" >> $GITHUB_OUTPUT
-                  echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
-
-                  # Check if versions are different
-                  if [ "$LATEST_VERSION" != "$CURRENT_VERSION" ]; then
-                    echo "need_update=true" >> $GITHUB_OUTPUT
-                  else
-                    echo "need_update=false" >> $GITHUB_OUTPUT
+                  release=$(curl --fail --silent --show-error --location --retry 3 --max-time 30 \
+                      https://api.github.com/repos/llvm/llvm-project/releases/latest)
+                  tag=$(jq -er '.tag_name | strings | select(test("\\Allvmorg-[0-9]+\\.[0-9]+\\.[0-9]+\\z"))' <<< "$release") || {
+                      echo "LLVM release has no valid stable version tag" >&2
+                      exit 1
+                  }
+                  latest_version=${tag#llvmorg-}
+                  current_version=$(sed -nE 's/^set\(LLVM_VERSION "([0-9]+\.[0-9]+\.[0-9]+)"\)$/\1/p' CMakeLists.txt)
+                  if [[ ! "$current_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                      echo "CMakeLists.txt has no valid LLVM version" >&2
+                      exit 1
                   fi
+
+                  if [[ "$latest_version" == "$current_version" ]]; then
+                      echo "need_update=false" >> "$GITHUB_OUTPUT"
+                      exit 0
+                  fi
+
+                  # Use the published checksum for the exact archive CMake downloads.
+                  asset="llvm-project-$latest_version.src.tar.xz"
+                  sha256=$(jq -er --arg asset "$asset" '
+                      [.assets[]? | select(.name == $asset)]
+                      | select(length == 1)
+                      | .[0].digest
+                      | strings
+                      | select(test("\\Asha256:[0-9a-f]{64}\\z"))
+                      | ltrimstr("sha256:")
+                  ' <<< "$release") || {
+                      echo "LLVM release has no valid SHA-256 digest for $asset" >&2
+                      exit 1
+                  }
+
+                  {
+                      echo "latest_version=$latest_version"
+                      echo "current_version=$current_version"
+                      echo "sha256=$sha256"
+                      echo "need_update=true"
+                  } >> "$GITHUB_OUTPUT"
 
             - name: Update CMakeLists.txt
               if: steps.check-version.outputs.need_update == 'true'
+              env:
+                  LATEST_VERSION: ${{ steps.check-version.outputs.latest_version }}
+                  SHA256: ${{ steps.check-version.outputs.sha256 }}
               run: |
-                  LATEST_VERSION=${{ steps.check-version.outputs.latest_version }}
-                  sed -i "s/set(LLVM_VERSION \".*\")/set(LLVM_VERSION \"$LATEST_VERSION\")/" CMakeLists.txt
-
-                  # Calculate new SHA256 checksum
-                  TARBALL_URL="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LATEST_VERSION}/llvm-project-${LATEST_VERSION}.src.tar.xz"
-                  echo "Downloading LLVM source to calculate checksum..."
-                  TEMP_FILE=$(mktemp)
-                  curl -L -o "$TEMP_FILE" "$TARBALL_URL"
-                  SHA256=$(sha256sum "$TEMP_FILE" | cut -d' ' -f1)
-                  rm "$TEMP_FILE"
-
-                  # Update SHA256 checksum
-                  sed -i "s/URL_HASH SHA256=[a-f0-9]*/URL_HASH SHA256=$SHA256/" CMakeLists.txt
+                  updated=$(mktemp ./CMakeLists.txt.XXXXXX)
+                  trap 'rm -f -- "$updated"' EXIT
+                  sed \
+                      -e "s/^set(LLVM_VERSION \".*\")$/set(LLVM_VERSION \"$LATEST_VERSION\")/" \
+                      -e "s/URL_HASH SHA256=[a-f0-9]\{64\}$/URL_HASH SHA256=$SHA256/" \
+                      CMakeLists.txt > "$updated"
+                  grep -Fxq "set(LLVM_VERSION \"$LATEST_VERSION\")" "$updated"
+                  grep -Eq "^[[:space:]]+URL_HASH SHA256=$SHA256$" "$updated"
+                  cat "$updated" > CMakeLists.txt
 
             - name: Commit changes
               if: steps.check-version.outputs.need_update == 'true'
